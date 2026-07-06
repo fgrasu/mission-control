@@ -527,7 +527,7 @@
       try {
         const res = await fetch(`${this.apiBase}/missions`);
         if (!res.ok) throw new Error(`Request failed (${res.status})`);
-        this._missions = (await res.json()) || [];
+        this._missions = (await res.json()).missions || [];
         this._render();
       } catch (err) {
         this._renderState('error', err.message || 'Could not load missions.');

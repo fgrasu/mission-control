@@ -5,86 +5,88 @@ from a REST API — with STATUS/TYPE filtering, JSON-based theming, and
 built-in enroll / pause / resume / claim actions.
 
 Drop it into any stack — React, Vue, Angular, plain HTML, a CMS — because
-it's just a standard [Custom
-Element](https://developer.mozilla.org/en-US/docs/Web/API/Web_components)
-with a [Shadow
-DOM](https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_shadow_DOM),
+it's just a standard [Custom Element](https://developer.mozilla.org/en-US/docs/Web/API/Web_components)
+with a [Shadow DOM](https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_shadow_DOM),
 not a framework-specific component.
 
-![Browser support: Chrome/Edge 67+, Firefox 63+, Safari 10.1+](https://img.shields.io/badge/browsers-Chrome%2067%2B%20%C2%B7%20Firefox%2063%2B%20%C2%B7%20Safari%2010.1%2B-blue)
+![Browser support](https://img.shields.io/badge/browsers-Chrome%2067%2B%20·%20Firefox%2063%2B%20·%20Safari%2010.1%2B-blue)
 ![No dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
 ![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey)
 
-## Why a Web Component?
-
-- **Zero framework lock-in.** Native browser API — no React/Vue/Angular
-  required, and it works fine inside any of them too.
-- **True style isolation.** Shadow DOM means the host page's CSS can't leak
-  in, and this component's CSS can't leak out.
-- **One file, one script tag.** No build step, no bundler, no npm install
-  required to use it.
+---
 
 ## Install
 
-Pick whichever fits your project — all three load the exact same file.
+Three options — all load the same file.
 
-### 1. Script tag from a CDN (fastest, zero tooling)
-
-Once this repo has a tagged release, [jsDelivr](https://www.jsdelivr.com/)
-and [unpkg](https://unpkg.com/) can serve it straight from GitHub or npm:
+### Option 1 — Script tag via jsDelivr (zero tooling, recommended)
 
 ```html
-<!-- from a GitHub release tag, via jsDelivr -->
-<script src="https://cdn.jsdelivr.net/gh/YOUR_GITHUB_USERNAME/mission-control@v1.0.0/dist/mission-control.js"></script>
+<!-- Always latest -->
+<script src="https://cdn.jsdelivr.net/gh/fgrasu/mission-control/mission-control.js"></script>
 
-<!-- or, once published to npm -->
-<script src="https://cdn.jsdelivr.net/npm/mission-control@1/dist/mission-control.js"></script>
-<script src="https://unpkg.com/mission-control@1/dist/mission-control.js"></script>
+<!-- Pinned to a release tag (recommended for production) -->
+<script src="https://cdn.jsdelivr.net/gh/fgrasu/mission-control@v1.0.0/mission-control.js"></script>
 ```
 
-### 2. Download the file directly
+jsDelivr serves directly from GitHub — no npm publish needed. The `@v1.0.0`
+URL works once you [create a release tag](#releasing-a-new-version).
 
-Grab [`dist/mission-control.js`](./dist/mission-control.js) from this repo
-and self-host it:
+### Option 2 — npm / GitHub Packages (for bundled projects)
+
+Install straight from GitHub — no npm registry account needed:
+
+```bash
+npm install github:fgrasu/mission-control
+```
+
+Or, once published to npm under the scoped name:
+
+```bash
+npm install @fgrasu/mission-control
+```
+
+Then import it (the script self-registers `<mission-control>`, no named
+export is needed):
+
+```js
+import '@fgrasu/mission-control';
+// <mission-control> is now defined in the browser
+```
+
+### Option 3 — Self-hosted
+
+Download [`mission-control.js`](./mission-control.js) and serve it yourself:
 
 ```html
 <script src="/path/to/mission-control.js"></script>
 ```
 
-### 3. npm / a bundler
-
-```bash
-npm install mission-control
-# or, before it's published to npm, straight from GitHub:
-npm install github:YOUR_GITHUB_USERNAME/mission-control
-```
-
-```js
-import 'mission-control'; // self-registers the <mission-control> element, no exports to use
-```
+---
 
 ## Usage
 
 ```html
+<script src="https://cdn.jsdelivr.net/gh/fgrasu/mission-control/mission-control.js"></script>
+
 <mission-control api-base="/api/missions"></mission-control>
-<script src="mission-control.js"></script>
 ```
 
-That's the whole integration. The component fetches `GET {api-base}/missions`
-on connect and renders a card grid.
+The component fetches `GET {api-base}/missions` on connect and renders a
+responsive card grid.
 
 ### API contract
 
-Point `api-base` at any backend that implements this contract (see
+Point `api-base` at any backend that implements this shape (see
 [`examples/mock-api.js`](./examples/mock-api.js) for a working in-memory
 mock you can copy and adapt):
 
 ```
-GET  {api-base}/missions                                -> { missions: Mission[] }
-POST {api-base}/missions/:id/enroll                      -> { mission: Mission }
-POST {api-base}/missions/:id/pause                       -> { mission: Mission }
-POST {api-base}/missions/:id/resume                      -> { mission: Mission }
-POST {api-base}/missions/:id/claim                       -> { mission: Mission }
+GET  {api-base}/missions                   → { missions: Mission[] }
+POST {api-base}/missions/:id/enroll        → { mission: Mission }
+POST {api-base}/missions/:id/pause         → { mission: Mission }
+POST {api-base}/missions/:id/resume        → { mission: Mission }
+POST {api-base}/missions/:id/claim         → { mission: Mission }
 ```
 
 ```ts
@@ -92,77 +94,87 @@ type Mission = {
   id: string;
   title: string;
   type: 'primaryType' | 'secondaryType' | 'tertiaryType' | 'promo';
-  enabled: boolean;                 // false = locked/expired
+  enabled: boolean;           // false = locked / expired card
   status: 'ready' | 'active' | 'paused' | 'completed';
-  startDate: string | null;         // ISO date
-  endDate: string | null;           // ISO date
+  startDate: string | null;   // ISO 8601
+  endDate: string | null;     // ISO 8601 — drives countdown timer on promo cards
   tasks: { title: string; completed: boolean }[];
 };
 ```
 
-Only one mission may be `active` at a time — the component's CTA buttons
-enforce this client-side, and your backend should enforce it server-side too.
+> Only one mission may be `active` at a time. The component enforces this
+> client-side; your backend should enforce it server-side too.
 
-### Listening for actions
+### Attributes, properties & events
+
+| Name             | Type              | Description                                          |
+|------------------|-------------------|------------------------------------------------------|
+| `api-base`       | attribute         | Base URL for all fetch/post calls.                   |
+| `theme`          | attribute (JSON)  | Full theme config — see [Theming](#theming).         |
+| `.theme`         | JS property       | Same as above but as a plain object (no stringify).  |
+| `.refresh()`     | method            | Re-fetches `GET {api-base}/missions`.                |
+| `mission-action` | CustomEvent       | Fires after any successful enroll/pause/resume/claim.|
 
 ```js
 document.querySelector('mission-control').addEventListener('mission-action', (e) => {
-  const { id, action, mission } = e.detail; // action: 'enroll' | 'pause' | 'resume' | 'claim'
-  console.log(`${action} on ${id}`, mission);
+  const { id, action, mission } = e.detail;
+  // action: 'enroll' | 'pause' | 'resume' | 'claim'
 });
 ```
 
-### Theming
+---
 
-Every visual token — colors, border radius, font, and per-type card
-background images — is set with a single JSON object, sent either as the
-`theme` attribute (a JSON string) or the `.theme` property (a plain object):
+## Theming
+
+All visual tokens — colors, radius, font, and per-type card background
+images — are configured with a single JSON object. Send it as the `theme`
+attribute (JSON string, works from any stack) or the `.theme` JS property
+(plain object, no stringify round-trip):
 
 ```html
 <mission-control
   api-base="/api/missions"
   theme='{
     "colors": {
-      "bg": "#f5f3ee",
-      "cardBg": "#ffffff",
+      "bg":      "#f5f3ee",
+      "cardBg":  "#ffffff",
       "surface": "#f1efe8",
-      "text": "#1d2321",
-      "border": "#e2ddd2",
-      "accent": "#1f6f5c",
+      "text":    "#1d2321",
+      "border":  "#e2ddd2",
+      "accent":  "#1f6f5c",
       "warning": "#b8742e",
       "success": "#2e9c5b"
     },
     "borderRadius": "20px",
     "fontFamily": "Georgia, serif",
     "cardImages": {
-      "primaryType": "https://cdn.example.com/wheel.jpg",
+      "primaryType":   "https://cdn.example.com/wheel.jpg",
       "secondaryType": "https://cdn.example.com/slot.jpg",
-      "tertiaryType": "https://cdn.example.com/shuffle.jpg",
-      "promo": "https://cdn.example.com/promo.jpg"
+      "tertiaryType":  "https://cdn.example.com/shuffle.jpg",
+      "promo":         "https://cdn.example.com/promo.jpg"
     }
   }'
 ></mission-control>
 ```
 
 ```js
-// Equivalent, from JS — no JSON.stringify/parse needed:
+// From JS — no JSON.stringify needed:
 document.querySelector('mission-control').theme = {
   colors: { accent: '#ff4d4d' },
   cardImages: { promo: '/img/promo.jpg' }
 };
 ```
 
-Every field is optional and merges over the built-in (dark) defaults — send
-only what you want to override. Both methods are reactive: re-applying
-re-themes instantly, no reload needed. Invalid JSON in the attribute logs a
-console warning and falls back to defaults rather than breaking the
-component.
+**All fields are optional** and merge over the built-in dark defaults — send
+only what you want to override. Both methods are reactive (re-applying
+re-themes with no reload). Invalid JSON logs a warning and falls back to
+defaults rather than breaking.
 
-`cardImages` keys match the mission `type` field exactly. A type with no
-image configured falls back to a small built-in decorative SVG.
+`cardImages` keys match the mission `type` field exactly. Types without a
+configured image fall back to a built-in decorative SVG illustration.
 
-Anything beyond this JSON schema can still be reached with raw CSS custom
-properties from host-page CSS, since the theme object is sugar over them:
+For anything outside the JSON schema, raw CSS custom properties still work
+as an escape hatch:
 
 ```css
 mission-control {
@@ -170,38 +182,73 @@ mission-control {
 }
 ```
 
-### Other attributes & properties
+### Full theme schema
 
-| Name              | Type             | Description                                   |
-| ------------------ | ---------------- | ---------------------------------------------- |
-| `api-base`         | attribute        | Base URL the component fetches/posts against. |
-| `theme`            | attribute (JSON) | See [Theming](#theming).                      |
-| `.theme`           | property (object)| Same as above, no JSON round-trip.             |
-| `.refresh()`       | method           | Re-fetches `GET {api-base}/missions`.          |
-| `mission-action`   | event            | Fires after any enroll/pause/resume/claim.     |
+```jsonc
+{
+  "colors": {
+    "bg":           "#0d1117",   // root background
+    "cardBg":       "#161b22",   // card surface
+    "surface":      "#1c2330",   // task chip background
+    "text":         "#f3f4f6",   // primary text
+    "textSoft":     "#9aa3af",   // secondary text
+    "textFaint":    "#6b7280",   // placeholder / disabled text
+    "border":       "#262d3a",   // card & chip borders
+    "accent":       "#5b5ff0",   // enroll/pause button, filter highlight
+    "accentHover":  "",          // defaults to accent if omitted
+    "success":      "#2ecc71",   // claim button, completed task dot
+    "warning":      "#d99a3d"    // resume button, promo timer, paused pill
+  },
+  "borderRadius":      "12px",   // card radius (inner elements scale from this)
+  "borderRadiusSmall": "8px",    // chip / button radius
+  "cardShadow":        "none",   // card box-shadow
+  "fontFamily":        "...",    // font stack for all text
+  "cardImages": {
+    "primaryType":   "",         // URL or path for Mystery Wheel card bg
+    "secondaryType": "",         // URL or path for Mystery Slot card bg
+    "tertiaryType":  "",         // URL or path for Mystery Shuffle card bg
+    "promo":         ""          // URL or path for Promo card bg
+  }
+}
+```
 
-## Local development / running the example
+---
 
-This is a zero-build project — there's nothing to compile. To try the demo
-locally, serve the repo root with any static file server (a server is
-needed only so `fetch()` works under `http://` instead of `file://`):
+## Running the example locally
+
+Zero build steps — just serve the repo root with any static file server:
 
 ```bash
 npx serve .
-# then open http://localhost:3000/examples/
+# → open http://localhost:3000/examples/
 ```
 
 [`examples/index.html`](./examples/index.html) shows two side-by-side
-instances (default theme + a live theme editor) wired up to
-[`examples/mock-api.js`](./examples/mock-api.js), a small in-memory mock
-backend that intercepts `fetch()` so you can see every state (ready, active,
-paused, completed, expired, promo countdown) without a real server.
+instances (default dark theme + a live theme editor) backed by
+[`examples/mock-api.js`](./examples/mock-api.js), an in-memory fetch
+interceptor that covers all mission states without needing a real server.
+
+---
+
+## Releasing a new version
+
+1. Bump `"version"` in `package.json`.
+2. Commit: `git commit -am "release: v1.x.x"`
+3. Tag: `git tag v1.x.x`
+4. Push both: `git push && git push --tags`
+5. Create a GitHub Release from the tag (optional but enables the CDN pin URL).
+
+jsDelivr picks up the new tag automatically — the pinned CDN URL goes live
+within minutes of the push.
+
+---
 
 ## Browser support
 
-Custom Elements v1 + Shadow DOM v1 + `<template>` — standard since ~2018:
-Chrome/Edge 67+, Firefox 63+, Safari 10.1+. No polyfills used or required
-for any currently maintained browser.
+Custom Elements v1 + Shadow DOM v1: Chrome/Edge 67+, Firefox 63+, Safari
+10.1+. No polyfills used or required for any currently-maintained browser.
+
+---
 
 ## License
 
