@@ -1,0 +1,32 @@
+{
+  "name": "mission-control",
+  "version": "1.0.0",
+  "description": "A framework-free Web Component that renders a grid of mission/quest cards from a REST API, with filtering, JSON-based theming, and built-in enroll/pause/resume/claim actions.",
+  "main": "dist/mission-control.js",
+  "module": "dist/mission-control.js",
+  "unpkg": "dist/mission-control.js",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "commonjs",
+  "sideEffects": true,
+  "keywords": [
+    "web-component",
+    "widget",
+    "vanilla-js"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YOUR_GITHUB_USERNAME/mission-control.git"
+  },
+  "homepage": "https://github.com/YOUR_GITHUB_USERNAME/mission-control#readme",
+  "bugs": {
+    "url": "https://github.com/YOUR_GITHUB_USERNAME/mission-control/issues"
+  },
+  "engines": {
+    "node": ">=0"
+  }
+}
