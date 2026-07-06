@@ -528,6 +528,7 @@
         const res = await fetch(`${this.apiBase}/missions`);
         if (!res.ok) throw new Error(`Request failed (${res.status})`);
         this._missions = (await res.json()) || [];
+        console.log('this._missions: ', this._missions)
         this._render();
       } catch (err) {
         this._renderState('error', err.message || 'Could not load missions.');
