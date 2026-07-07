@@ -120,7 +120,7 @@ attribute (JSON string, works from any stack) or the `.theme` JS property
       "textSoft": "#9aa3af",  // secondary text
       "textFaint": "#6b7280", // placeholder / disabled text
       "border": "#262d3a",    // card & chip borders
-      "accent": "#5b5ff0",    // enroll/pause button, filter highlight
+      "accent": "#4D5DFA",    // enroll/pause button, filter highlight
       "accentHover": "",        // defaults to accent if omitted
       "success": "#2ecc71",   // claim button, completed task dot
       "warning": "#d99a3d"    // resume button, promo timer, paused pill
