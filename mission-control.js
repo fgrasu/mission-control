@@ -1,73 +1,11 @@
-/**
- * <mission-control>
- * ============================================================================
- * Isolated, dependency-free Web Component rendering a grid of "mission"
- * cards from a REST API, with STATUS/TYPE filtering and per-mission actions
- * (enroll / pause / resume / claim reward).
- *
- * WHY A WEB COMPONENT
- *   Native Custom Elements + Shadow DOM -> works in any framework (or none),
- *   ships as one <script> tag, and its CSS can never leak in or out.
- *
- * BROWSER SUPPORT
- *   Custom Elements v1 + Shadow DOM v1 + <template>, standard since ~2018:
- *   Chrome/Edge 67+, Firefox 63+, Safari 10.1+. No polyfills needed.
- *
- * INTEGRATION
- *   <script src="mission-control.js"></script>
- *   <mission-control api-base="/api/missions"></mission-control>
- *
- * THEMING
- *   Colors, radius, font, and per-type card background images are all set
- *   via one JSON object, sent either as the `theme` attribute (a JSON
- *   string — works from any stack) or the `.theme` JS property (a plain
- *   object — no stringify/parse needed):
- *
- *     <mission-control theme='{
- *       "colors": { "bg": "#f5f3ee", "cardBg": "#fff", "accent": "#1f6f5c" },
- *       "borderRadius": "20px",
- *       "fontFamily": "Georgia, serif",
- *       "cardImages": { "promo": "https://cdn.example.com/promo.jpg" }
- *     }'></mission-control>
- *
- *     el.theme = { colors: { accent: '#ff4d4d' } }; // same effect, no JSON
- *
- *   Every field is optional and merges over the built-in defaults. Both
- *   methods are reactive — re-applying re-themes instantly. Invalid JSON
- *   logs a warning and falls back to defaults instead of failing.
- *
- *   `cardImages` keys match the mission `type` field exactly (see below).
- *   A type with no image configured falls back to a small built-in SVG.
- *
- *   Anything beyond the JSON schema can still be reached with raw CSS
- *   custom properties from host CSS (e.g. `mission-control { --mc-card-box-shadow: ... }`),
- *   since the JSON theme is sugar over those same variables — see
- *   THEME_PATH_TO_CSS_VAR for the full mapping.
- *
- * API CONTRACT (swap mock-api.js for a real backend; this is the only
- * contract this component relies on):
- *
- *   GET  {api-base}/missions                      -> { missions: Mission[] }
- *   POST {api-base}/missions/:id/enroll|pause|resume|claim -> { mission: Mission }
- *
- *   Mission = {
- *     id, title, type,       // 'primaryType' | 'secondaryType' | 'tertiaryType' | 'promo'
- *     enabled,                // boolean
- *     status,                 // 'ready' | 'active' | 'paused' | 'completed'
- *     startDate, endDate,     // ISO date string or null
- *     tasks: [{ title, completed }]
- *   }
- * ============================================================================
- */
-
 (function () {
   'use strict';
 
-  const TAG_NAME = 'mission-control';
+  // ===========================================================================
+  // CONSTANTS
+  // ===========================================================================
 
-  // ===========================================================================
-  // CONSTANTS — domain vocabulary used throughout rendering & theming
-  // ===========================================================================
+  const TAG_NAME = 'mission-control';
 
   const TYPE_LABELS = {
     primaryType: 'Mystery Wheel',
@@ -95,13 +33,9 @@
     claim: 'Reward claimed!'
   };
 
-  /**
-   * Theme JSON dot-path -> CSS custom property it sets on :host.
-   * `cardImages` is deliberately excluded: it drives markup (which
-   * background each card renders), not a CSS variable.
-   */
-  const THEME_PATH_TO_CSS_VAR = {
-    'colors.bg': '--mc-bg-color',
+  const THEME_PATH_TO_CSS_VAR = {    
+    'fontFamily': '--mc-font-family',
+    'borderRadius': '--mc-border-radius',
     'colors.cardBg': '--mc-card-bg-color',
     'colors.surface': '--mc-surface-color',
     'colors.text': '--mc-text-color',
@@ -111,41 +45,25 @@
     'colors.accent': '--mc-accent-color',
     'colors.accentHover': '--mc-accent-color-hover',
     'colors.success': '--mc-success-color',
-    'colors.warning': '--mc-warning-color',
-    borderRadius: '--mc-border-radius',
-    borderRadiusSmall: '--mc-border-radius-sm',
-    cardShadow: '--mc-card-box-shadow',
-    fontFamily: '--mc-font-family'
+    'colors.warning': '--mc-warning-color'
   };
-
-  // ===========================================================================
-  // STYLES — every color/radius/font token has a themeable fallback via
-  // var(--theme-var, default), so the JSON theme above can override any of
-  // them without touching this stylesheet.
-  // ===========================================================================
 
   const STYLES = `
     :host {
-      --mc-bg: var(--mc-bg-color, #0d1117);
+      --mc-font: var(--mc-font-family, Roboto, sans-serif);
+      --mc-radius: var(--mc-border-radius, 8px);
       --mc-surface: var(--mc-card-bg-color, #161b22);
       --mc-surface-2: var(--mc-surface-color, #1c2330);
       --mc-ink: var(--mc-text-color, #f3f4f6);
       --mc-ink-soft: var(--mc-text-color-soft, #9aa3af);
       --mc-ink-faint: var(--mc-text-color-faint, #6b7280);
       --mc-line: var(--mc-border-color, #262d3a);
-
-      --mc-blue: var(--mc-accent-color, #5b5ff0);
+      --mc-blue: var(--mc-accent-color, #4D5DFA);
       --mc-blue-hover: var(--mc-accent-color-hover, var(--mc-accent-color, #6f72f4));
       --mc-amber: var(--mc-warning-color, #d99a3d);
       --mc-amber-soft: var(--mc-warning-color-soft, var(--mc-warning-color, #f0c479));
       --mc-green: var(--mc-success-color, #2ecc71);
       --mc-green-soft: var(--mc-success-color-soft, var(--mc-success-color, #4fdd8c));
-
-      --mc-radius: var(--mc-border-radius, 12px);
-      --mc-radius-sm: var(--mc-border-radius-sm, 8px);
-      --mc-card-shadow: var(--mc-card-box-shadow, none);
-      --mc-font: var(--mc-font-family, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
-
       display: block;
       font-family: var(--mc-font);
       color: var(--mc-ink);
@@ -154,75 +72,59 @@
     :host * { box-sizing: border-box; }
     :host([hidden]) { display: none; }
 
-    .mc-root { background: var(--mc-bg); padding: 28px; border-radius: calc(var(--mc-radius) + 4px); }
-
     /* ---- Toolbar / filters ---- */
-    .mc-toolbar { display: flex; justify-content: flex-end; gap: 24px; margin-bottom: 20px; flex-wrap: wrap; }
-    .mc-filter { display: flex; flex-direction: column; gap: 6px; position: relative; }
-    .mc-filter-label {
-      font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
-      color: var(--mc-ink-faint); text-transform: uppercase;
-    }
+    .mc-toolbar { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-bottom: 24px; }
+    .mc-filter { position: relative; display: flex; flex-direction: column; gap: 2px; width: 100%; }
+    .mc-filter-label { font-size: 12px; font-weight: 300; color: var(--mc-ink); opacity: 0.7; text-transform: uppercase; }
     .mc-filter-btn {
       appearance: none; background: var(--mc-surface); border: 1px solid var(--mc-line);
-      color: var(--mc-ink); font: 700 14px var(--mc-font); letter-spacing: 0.04em;
-      text-transform: uppercase; padding: 10px 14px; border-radius: var(--mc-radius-sm);
-      cursor: pointer; display: flex; align-items: center; justify-content: space-between;
-      gap: 16px; min-width: 150px;
+      color: var(--mc-ink); font-size: 16px; font-weight: 600;
+      text-transform: uppercase; padding: 16px; border-radius: var(--mc-radius);
+      cursor: pointer; display: flex; align-items: center; justify-content: space-between; min-width: 180px;
     }
     .mc-filter-btn:hover { border-color: var(--mc-ink-faint); }
     .mc-filter-btn:focus-visible { outline: 2px solid var(--mc-blue); outline-offset: 2px; }
-    .mc-filter-chevron { width: 10px; height: 10px; flex: 0 0 auto; color: var(--mc-amber-soft); transition: transform 140ms ease; }
+    .mc-filter-chevron { width: 12px; height: 12px; flex: 0 0 auto; color: var(--mc-amber-soft); transition: transform 140ms ease; }
     .mc-filter[data-open="true"] .mc-filter-chevron { transform: rotate(180deg); }
-
     .mc-filter-menu {
-      position: absolute; top: calc(100% + 6px); right: 0; left: 0;
-      background: var(--mc-surface-2); border: 1px solid var(--mc-line); border-radius: var(--mc-radius-sm);
+      position: absolute; top: calc(100% + 2px); right: 0; left: 0;
+      background: var(--mc-surface-2); border: 1px solid var(--mc-line); border-radius: var(--mc-radius);
       overflow: hidden; box-shadow: 0 12px 28px -8px rgba(0,0,0,0.55); z-index: 20; display: none;
     }
     .mc-filter[data-open="true"] .mc-filter-menu { display: block; }
     .mc-filter-option {
-      padding: 10px 14px; font-size: 13px; font-weight: 600; letter-spacing: 0.03em;
+      padding: 8px 16px; font-size: 16px; font-weight: 400;
       text-transform: uppercase; color: var(--mc-ink-soft); cursor: pointer;
     }
     .mc-filter-option:hover { background: var(--mc-surface); color: var(--mc-ink); }
     .mc-filter-option[data-selected="true"] { background: var(--mc-blue); color: #fff; }
 
     /* ---- Grid & cards ---- */
-    .mc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .mc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
 
     .mc-card {
       position: relative; background: var(--mc-surface); border: 1px solid var(--mc-line);
-      border-radius: var(--mc-radius); box-shadow: var(--mc-card-shadow); padding: 18px;
-      display: flex; flex-direction: column; gap: 14px; overflow: hidden; isolation: isolate;
+      border-radius: var(--mc-radius); box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.15); padding: 18px;
+      display: flex; flex-direction: column; gap: 24px; overflow: hidden; isolation: isolate;
     }
     .mc-card[data-disabled="true"] { opacity: 0.5; }
     .mc-card[data-type="promo"] {
       border-color: rgba(217,154,61,0.55);
-      box-shadow: 0 0 0 1px rgba(217,154,61,0.18), 0 0 24px -6px rgba(217,154,61,0.35);
+      background-color: #2f2a21;
     }
-
     .mc-card-art {
-      position: absolute; inset: 0; z-index: -1; display: flex; align-items: center;
-      justify-content: flex-end; opacity: 0.5; color: var(--mc-line); pointer-events: none;
+      position: absolute; display: flex; justify-content: space-between; inset: 0; pointer-events: none;
+      background-size: auto 100%; background-position: center; background-repeat: no-repeat;
     }
-    .mc-card-art svg { height: 180%; transform: translateX(18%); }
-    .mc-card-art::after {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(90deg, var(--mc-surface) 35%, transparent 85%);
-    }
-    .mc-card-art[data-image="true"] { opacity: 1; background-size: cover; background-position: center; }
-    .mc-card-art[data-image="true"]::after { background: linear-gradient(90deg, var(--mc-surface) 30%, transparent 90%); }
-
     .mc-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
     .mc-card-title-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .mc-card-title { font-size: 16px; font-weight: 700; margin: 0; line-height: 1.3; }
+    .mc-card-title { font-size: 20px; font-weight: 700; margin: 0; line-height: 1.3; }
 
     .mc-timer { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: var(--mc-amber-soft); white-space: nowrap; }
     .mc-timer svg { width: 13px; height: 13px; }
 
     .mc-status-pill {
-      font-size: 11px; font-weight: 700; letter-spacing: 0.02em; padding: 3px 10px;
+      font-size: 10px; font-weight: 700; padding: 2px 8px;
       border-radius: 999px; white-space: nowrap; border: 1px solid currentColor; flex: 0 0 auto;
     }
     .mc-status-pill[data-status="ready"]     { color: var(--mc-ink-soft); }
@@ -234,7 +136,7 @@
     .mc-tasks { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
     .mc-task {
       position: relative; flex: 1 1 140px; background: var(--mc-surface-2); border: 1px solid transparent;
-      border-radius: var(--mc-radius-sm); padding: 10px 22px 10px 12px; font-size: 13px;
+      border-radius: var(--mc-radius); padding: 10px 22px 10px 12px; font-size: 13px;
       line-height: 1.35; color: var(--mc-ink-soft);
     }
     .mc-task[data-completed="true"] { color: var(--mc-ink); border-color: var(--mc-green); box-shadow: inset 0 -2px 0 var(--mc-green); }
@@ -244,8 +146,8 @@
     .mc-footer { margin-top: auto; }
 
     .mc-cta {
-      appearance: none; border: none; font: 700 14px var(--mc-font); padding: 12px 16px;
-      border-radius: var(--mc-radius-sm); cursor: pointer; width: 100%;
+      appearance: none; border: none; font: 700 16px var(--mc-font); padding: 8px 16px;
+      border-radius: var(--mc-radius); cursor: pointer; width: 100%;
       transition: filter 120ms ease, transform 120ms ease;
     }
     .mc-cta:hover:not(:disabled) { filter: brightness(1.08); }
@@ -278,18 +180,12 @@
     @media (prefers-reduced-motion: reduce) {
       .mc-cta, .mc-filter-chevron, .mc-toast { transition: none; }
     }
-    @media (max-width: 720px) {
-      .mc-grid { grid-template-columns: 1fr; }
+    @media (min-width: 720px) {
+      .mc-grid { display: flex; justify-content: flex-end; }
       .mc-toolbar { justify-content: flex-start; }
-      .mc-filter, .mc-filter-btn { min-width: 0; flex: 1 1 140px; }
+      .mc-filter { width: auto; }
     }
   `;
-
-  // ===========================================================================
-  // SVG ASSETS — chevron/timer icons + per-type decorative card art, all
-  // inline so the component never issues an image request unless the
-  // caller supplies a cardImages URL via the theme.
-  // ===========================================================================
 
   const ICON_CHEVRON = `<svg class="mc-filter-chevron" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -300,39 +196,6 @@
     <path d="M8 6v3l2 1.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M6 1.5h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
   </svg>`;
-
-  const CARD_ART = {
-    primaryType: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="100" cy="100" r="92" stroke="currentColor" stroke-width="3" fill="none"/>
-      <circle cx="100" cy="100" r="70" stroke="currentColor" stroke-width="2" fill="none"/>
-      <g stroke="currentColor" stroke-width="2">
-        ${Array.from({ length: 12 }, (_, i) => {
-          const a = (i / 12) * Math.PI * 2;
-          const [x1, y1] = [100 + Math.cos(a) * 70, 100 + Math.sin(a) * 70];
-          const [x2, y2] = [100 + Math.cos(a) * 92, 100 + Math.sin(a) * 92];
-          return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`;
-        }).join('')}
-      </g>
-      <circle cx="100" cy="100" r="6" fill="currentColor"/>
-    </svg>`,
-    secondaryType: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-      <rect x="40" y="60" width="120" height="80" rx="10" stroke="currentColor" stroke-width="3" fill="none"/>
-      <rect x="55" y="74" width="90" height="14" rx="3" fill="currentColor"/>
-      <circle cx="65" cy="112" r="8" fill="currentColor"/><circle cx="90" cy="112" r="8" fill="currentColor"/>
-      <circle cx="115" cy="112" r="8" fill="currentColor"/><circle cx="140" cy="112" r="8" fill="currentColor"/>
-    </svg>`,
-    tertiaryType: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-      <rect x="60" y="40" width="60" height="90" rx="8" stroke="currentColor" stroke-width="3" fill="none" transform="rotate(-8 90 85)"/>
-      <rect x="90" y="55" width="60" height="90" rx="8" stroke="currentColor" stroke-width="3" fill="none" transform="rotate(8 120 100)"/>
-    </svg>`,
-    promo: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-      <polygon points="100,30 120,80 175,85 132,118 148,172 100,140 52,172 68,118 25,85 80,80" stroke="currentColor" stroke-width="3" fill="none"/>
-    </svg>`
-  };
-
-  // ===========================================================================
-  // MARKUP TEMPLATE — cloned into the shadow root once per instance.
-  // ===========================================================================
 
   const TEMPLATE = document.createElement('template');
   TEMPLATE.innerHTML = `
@@ -360,8 +223,7 @@
   `;
 
   // ===========================================================================
-  // HELPERS — small pure functions, no `this`, easy to reason about in
-  // isolation and reuse across render methods.
+  // HELPERS
   // ===========================================================================
 
   const escapeHtml = (str) => {
@@ -370,10 +232,8 @@
     return div.innerHTML;
   };
 
-  const getByPath = (obj, path) =>
-    path.split('.').reduce((acc, key) => (acc && typeof acc === 'object' ? acc[key] : undefined), obj);
+  const getByPath = (obj, path) => path.split('.').reduce((acc, key) => (acc && typeof acc === 'object' ? acc[key] : undefined), obj);
 
-  /** Maps a STATUS filter value to the mission fields it should match. */
   function matchesStatusFilter(mission, filterValue) {
     switch (filterValue) {
       case 'available': return mission.status === 'ready' && mission.enabled !== false;
@@ -384,10 +244,6 @@
     }
   }
 
-  /**
-   * The entire CTA state machine: maps a mission's status (+ enabled,
-   * + whether some other mission is already active) to one button.
-   */
   function resolveCta(mission, activeMissionExists, isDisabled) {
     if (isDisabled) return { action: 'locked', label: 'Expired', disabled: true };
 
@@ -422,12 +278,10 @@
     return `Expires in ${hours}h:${String(minutes).padStart(2, '0')}m`;
   }
 
-  /** Builds the background-art layer for a card: custom image if themed, else built-in SVG. */
   function renderCardArt(type, theme) {
     const imageUrl = CARD_IMAGE_TYPES.includes(type) ? theme.cardImages?.[type] : null;
-    if (!imageUrl) return `<div class="mc-card-art" aria-hidden="true">${CARD_ART[type] || ''}</div>`;
+    if (!imageUrl) return;
 
-    // CSS url() breaks on unescaped quotes; this URL may come from untrusted JSON.
     const safeUrl = encodeURI(String(imageUrl)).replace(/"/g, '%22');
     return `<div class="mc-card-art" data-image="true" aria-hidden="true" style="background-image:url(&quot;${safeUrl}&quot;)"></div>`;
   }
@@ -501,13 +355,10 @@
       if (name === 'theme') this._setThemeFromAttribute(newVal);
     }
 
-    // ---- Public API ----------------------------------------------------
-
     get apiBase() {
       return this.getAttribute('api-base') || '/api';
     }
 
-    /** Theme as a plain object. Setting it also reflects to the `theme` attribute. */
     get theme() {
       return this._theme;
     }
@@ -535,8 +386,6 @@
       }
     }
 
-    // ---- Theming ---------------------------------------------------------
-
     _setThemeFromAttribute(rawValue) {
       if (!rawValue) return this._applyTheme({});
       try {
@@ -547,7 +396,6 @@
       }
     }
 
-    /** Pushes theme.colors/borderRadius/fontFamily to CSS vars; cardImages just triggers a re-render. */
     _applyTheme(themeObj) {
       this._theme = themeObj || {};
       for (const [path, cssVar] of Object.entries(THEME_PATH_TO_CSS_VAR)) {
@@ -556,8 +404,6 @@
       }
       if (this._missions.length) this._render();
     }
-
-    // ---- Filters -----------------------------------------------------------
 
     _initFilters() {
       this._typeFilterOptions = [{ value: 'all', label: 'All' }, ...Object.entries(TYPE_LABELS).map(([value, label]) => ({ value, label }))];
@@ -596,8 +442,6 @@
       this.shadowRoot.querySelectorAll('.mc-filter').forEach((el) => (el.dataset.open = 'false'));
     }
 
-    // ---- Actions (enroll / pause / resume / claim) --------------------------
-
     async _onCardClick(e) {
       const btn = e.target.closest('.mc-cta');
       const { id, action } = btn?.dataset || {};
@@ -627,7 +471,6 @@
       }
     }
 
-    /** Merges a server-updated mission into local state. Only one mission may be active at a time. */
     _applyMissionUpdate(updated) {
       if (!updated) return;
       const idx = this._missions.findIndex((m) => m.id === updated.id);
@@ -654,8 +497,6 @@
         el.querySelector('.mc-timer-text').textContent = formatCountdown(el.dataset.end);
       });
     }
-
-    // ---- Rendering -----------------------------------------------------------
 
     _renderState(kind, message) {
       const markup = {
