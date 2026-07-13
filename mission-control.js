@@ -7,173 +7,120 @@
 
   const TAG_NAME = 'mission-control';
 
-  const TYPE_LABELS = {
-    primaryType: 'Mystery Wheel',
-    secondaryType: 'Mystery Slot',
-    tertiaryType: 'Mystery Shuffle',
-    promo: 'Promo'
-  };
-  const CARD_IMAGE_TYPES = Object.keys(TYPE_LABELS);
-
-  const STATUS_FILTERS = [
-    { value: 'available', label: 'Available' },
-    { value: 'active', label: 'Active' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'expired', label: 'Expired' }
-  ];
-
-  const STATUS_LABELS = { ready: 'Available', active: 'Active', paused: 'Paused', completed: 'Completed' };
-
   const ACTIONS = ['enroll', 'pause', 'resume', 'claim'];
 
-  const TOAST_MESSAGES = {
-    enroll: 'Mission started.',
-    pause: 'Mission paused.',
-    resume: 'Mission resumed.',
-    claim: 'Reward claimed!'
+  const STATUSES = {
+    all: 'All',
+    ready: 'Available',
+    active: 'Active',
+    paused: 'Paused',
+    completed: 'Completed',
+    expired: 'Expired',
   };
 
-  const THEME_PATH_TO_CSS_VAR = {    
-    'fontFamily': '--mc-font-family',
-    'borderRadius': '--mc-border-radius',
-    'colors.cardBg': '--mc-card-bg-color',
-    'colors.surface': '--mc-surface-color',
-    'colors.text': '--mc-text-color',
-    'colors.textSoft': '--mc-text-color-soft',
-    'colors.textFaint': '--mc-text-color-faint',
-    'colors.border': '--mc-border-color',
-    'colors.accent': '--mc-accent-color',
-    'colors.accentHover': '--mc-accent-color-hover',
-    'colors.success': '--mc-success-color',
-    'colors.warning': '--mc-warning-color'
+  const TYPES = {
+    all: 'All',
+    primary: 'MYSTERY WHEEL',
+    secondary: 'MYSTERY SLOT',
+    tertiary: 'MYSTERY SHUFFLE',
+    promo: 'PROMO',
   };
 
   const STYLES = `
     :host {
-      --mc-font: var(--mc-font-family, Roboto, sans-serif);
-      --mc-radius: var(--mc-border-radius, 8px);
-      --mc-surface: var(--mc-card-bg-color, #161b22);
-      --mc-surface-2: var(--mc-surface-color, #1c2330);
-      --mc-ink: var(--mc-text-color, #f3f4f6);
-      --mc-ink-soft: var(--mc-text-color-soft, #9aa3af);
-      --mc-ink-faint: var(--mc-text-color-faint, #6b7280);
-      --mc-line: var(--mc-border-color, #262d3a);
-      --mc-blue: var(--mc-accent-color, #4D5DFA);
-      --mc-blue-hover: var(--mc-accent-color-hover, var(--mc-accent-color, #6f72f4));
-      --mc-amber: var(--mc-warning-color, #d99a3d);
-      --mc-amber-soft: var(--mc-warning-color-soft, var(--mc-warning-color, #f0c479));
-      --mc-green: var(--mc-success-color, #2ecc71);
-      --mc-green-soft: var(--mc-success-color-soft, var(--mc-success-color, #4fdd8c));
+      --mc-font: Roboto, sans-serif;
+      --mc-radius: 8px;
+      --mc-text: #ffffff;
+      --mc-primary: #4D5DFA;
+      --mc-secondary: #24C15B;
+      --mc-tertiary: #F5D547;
+      --mc-danger: #FF6B5C;
       display: block;
       font-family: var(--mc-font);
-      color: var(--mc-ink);
+      color: var(--mc-text);
       box-sizing: border-box;
     }
     :host * { box-sizing: border-box; }
     :host([hidden]) { display: none; }
 
     /* ---- Toolbar / filters ---- */
-    .mc-toolbar { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-bottom: 24px; }
+    .mc-toolbar { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 24px; }
+    .mc-toolbar[data-single="true"] { grid-template-columns: 1fr; }
     .mc-filter { position: relative; display: flex; flex-direction: column; gap: 2px; width: 100%; }
-    .mc-filter-label { font-size: 12px; font-weight: 300; color: var(--mc-ink); opacity: 0.7; text-transform: uppercase; }
+    .mc-filter-label { font-size: 12px; font-weight: 300; opacity: 0.7; text-transform: uppercase; }
     .mc-filter-btn {
-      appearance: none; background: var(--mc-surface); border: 1px solid var(--mc-line);
-      color: var(--mc-ink); font-size: 16px; font-weight: 600;
-      text-transform: uppercase; padding: 16px; border-radius: var(--mc-radius);
-      cursor: pointer; display: flex; align-items: center; justify-content: space-between; min-width: 180px;
+      display: flex; align-items: center; justify-content: space-between; min-width: 190px; z-index: 2; text-transform: uppercase;
+      font-size: 16px; font-weight: 600; padding: 16px; border-radius: var(--mc-radius); cursor: pointer; appearance: none;
+      color: var(--mc-text); background: #252932; border: 1px solid #3b414f; box-shadow: 0 4px 8px #00000080;
     }
-    .mc-filter-btn:hover { border-color: var(--mc-ink-faint); }
-    .mc-filter-btn:focus-visible { outline: 2px solid var(--mc-blue); outline-offset: 2px; }
-    .mc-filter-chevron { width: 12px; height: 12px; flex: 0 0 auto; color: var(--mc-amber-soft); transition: transform 140ms ease; }
+    .mc-filter-chevron { flex: 0 0 auto; width: 12px; height: 12px; transition: transform 0.2s ease; color: var(--mc-tertiary); }
     .mc-filter[data-open="true"] .mc-filter-chevron { transform: rotate(180deg); }
     .mc-filter-menu {
-      position: absolute; top: calc(100% + 2px); right: 0; left: 0;
-      background: var(--mc-surface-2); border: 1px solid var(--mc-line); border-radius: var(--mc-radius);
-      overflow: hidden; box-shadow: 0 12px 28px -8px rgba(0,0,0,0.55); z-index: 20; display: none;
+      display: none; position: absolute; top: 100%; right: 0; left: 0; margin-top: 2px;
+      overflow: hidden; border-radius: var(--mc-radius); z-index: 1;
+      background: #252932; border: 1px solid #3b414f; box-shadow: 0 4px 8px #00000080;
     }
     .mc-filter[data-open="true"] .mc-filter-menu { display: block; }
-    .mc-filter-option {
-      padding: 8px 16px; font-size: 16px; font-weight: 400;
-      text-transform: uppercase; color: var(--mc-ink-soft); cursor: pointer;
-    }
-    .mc-filter-option:hover { background: var(--mc-surface); color: var(--mc-ink); }
-    .mc-filter-option[data-selected="true"] { background: var(--mc-blue); color: #fff; }
+    .mc-filter-option { padding: 8px 16px; font-size: 16px; font-weight: 400; text-transform: uppercase; cursor: pointer; }
+    .mc-filter-option:hover { background: #323744; }
+    .mc-filter-option[data-selected="true"] { background: var(--mc-primary); }
 
     /* ---- Grid & cards ---- */
-    .mc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-
+    .mc-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 20px; }
     .mc-card {
-      position: relative; background: var(--mc-surface); border: 1px solid var(--mc-line);
-      border-radius: var(--mc-radius); box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.15); padding: 18px;
-      display: flex; flex-direction: column; gap: 24px; overflow: hidden; isolation: isolate;
+      position: relative; display: flex; flex-direction: column; gap: 24px; border-radius: var(--mc-radius); padding: 16px;
+      background: linear-gradient(180deg, #242D3E 0%, #2C3649 100%); border: 1px solid #38445B; box-shadow: 0 4px 8px 0 #00000080;
     }
-    .mc-card[data-disabled="true"] { opacity: 0.5; }
-    .mc-card[data-type="promo"] {
-      border-color: rgba(217,154,61,0.55);
-      background-color: #2f2a21;
-    }
-    .mc-card-art {
-      position: absolute; display: flex; justify-content: space-between; inset: 0; pointer-events: none;
-      background-size: auto 100%; background-position: center; background-repeat: no-repeat;
-    }
-    .mc-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-    .mc-card-title-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .mc-card-title { font-size: 20px; font-weight: 700; margin: 0; line-height: 1.3; }
-
-    .mc-timer { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: var(--mc-amber-soft); white-space: nowrap; }
+    .mc-card[data-type="promo"] { background: #2f2a21; box-shadow: 0 4px 16px 0 #dbc04680; border: 1px solid #dbc04660; }
+    .mc-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; }
+    .mc-card-title { font-size: 20px; font-weight: 700; margin: 0; line-height: 1.3; text-shadow: 0 4px 4px #00000075; }
+    .mc-timer { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--mc-tertiary); white-space: nowrap; }
     .mc-timer svg { width: 13px; height: 13px; }
+    .mc-status-pill { flex: none; font-size: 10px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; padding: 4px 10px; border-radius: 16px; border: 1px solid #ffffff; white-space: nowrap; }
+    .mc-status-pill[data-status="ready"]     { border-color: #9aa2b1; color: #9aa2b1; }
+    .mc-status-pill[data-status="active"]    { border-color: var(--mc-primary); color: #ffffff; }
+    .mc-status-pill[data-status="paused"]    { border-color: var(--mc-primary); color: #ffffff; }
+    .mc-status-pill[data-status="completed"] { border-color: var(--mc-secondary); color: var(--mc-secondary); }
+    .mc-status-pill[data-status="expired"]   { border-color: var(--mc-danger); color: var(--mc-danger); }
 
-    .mc-status-pill {
-      font-size: 10px; font-weight: 700; padding: 2px 8px;
-      border-radius: 999px; white-space: nowrap; border: 1px solid currentColor; flex: 0 0 auto;
-    }
-    .mc-status-pill[data-status="ready"]     { color: var(--mc-ink-soft); }
-    .mc-status-pill[data-status="active"]    { color: var(--mc-blue-hover); }
-    .mc-status-pill[data-status="paused"]    { color: var(--mc-amber-soft); }
-    .mc-status-pill[data-status="completed"] { color: var(--mc-green-soft); }
-    .mc-status-pill[data-status="locked"]    { color: var(--mc-ink-faint); }
-
-    .mc-tasks { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+    .mc-tasks { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
     .mc-task {
-      position: relative; flex: 1 1 140px; background: var(--mc-surface-2); border: 1px solid transparent;
-      border-radius: var(--mc-radius); padding: 10px 22px 10px 12px; font-size: 13px;
-      line-height: 1.35; color: var(--mc-ink-soft);
+      position: relative; flex: 1 1 140px; font-size: 13px; padding: 10px 26px 10px 14px; border-radius: var(--mc-radius); 
+      color: rgba(255,255,255,0.7); line-height: 1.3; background: #1C2230; border-bottom: 2px solid transparent;
     }
-    .mc-task[data-completed="true"] { color: var(--mc-ink); border-color: var(--mc-green); box-shadow: inset 0 -2px 0 var(--mc-green); }
-    .mc-task-dot { position: absolute; top: 8px; right: 8px; width: 7px; height: 7px; border-radius: 50%; background: var(--mc-ink-faint); }
-    .mc-task[data-completed="true"] .mc-task-dot { background: var(--mc-green); }
+    .mc-task[data-completed="true"] { border-bottom-color: var(--mc-secondary); color: var(--mc-text); }
+    .mc-task-dot { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: #919592; }
+    .mc-task[data-completed="true"] .mc-task-dot { background: var(--mc-secondary); }
 
-    .mc-footer { margin-top: auto; }
+    .mc-card-footer { margin-top: auto; }
 
     .mc-cta {
-      appearance: none; border: none; font: 700 16px var(--mc-font); padding: 8px 16px;
-      border-radius: var(--mc-radius); cursor: pointer; width: 100%;
+      appearance: none; border: none; font: 700 16px var(--mc-font); padding: 13px 16px;
+      color: var(--mc-text); border-radius: var(--mc-radius); cursor: pointer; width: 100%;
       transition: filter 120ms ease, transform 120ms ease;
     }
     .mc-cta:hover:not(:disabled) { filter: brightness(1.08); }
-    .mc-cta:active:not(:disabled) { transform: scale(0.985); }
-    .mc-cta:focus-visible { outline: 2px solid var(--mc-blue); outline-offset: 2px; }
+    .mc-cta:focus-visible { outline: 2px solid var(--mc-primary); outline-offset: 2px; }
     .mc-cta:disabled { cursor: not-allowed; opacity: 0.55; }
 
-    .mc-cta[data-action="enroll"] { background: var(--mc-blue); color: #fff; }
-    .mc-cta[data-action="pause"]  { background: var(--mc-blue); color: #fff; }
-    .mc-cta[data-action="resume"] { background: var(--mc-amber); color: #1a1306; }
-    .mc-cta[data-action="claim"]  { background: var(--mc-green); color: #06210f; }
-    .mc-cta[data-action="locked"] { background: var(--mc-surface-2); color: var(--mc-ink-faint); border: 1px solid var(--mc-line); }
-    .mc-cta[data-action="done"]   { background: var(--mc-surface-2); color: var(--mc-ink-faint); border: 1px dashed var(--mc-line); }
+    .mc-cta[data-action="enroll"] { background: var(--mc-primary); }
+    .mc-cta[data-action="pause"]  { background: var(--mc-primary); }
+    .mc-cta[data-action="resume"] { background: var(--mc-tertiary); }
+    .mc-cta[data-action="claim"]  { background: var(--mc-secondary); }
+    .mc-cta[data-action="locked"] { background: var(--mc-primary); }
+    .mc-cta[data-action="done"]   { background: var(--mc-secondary); }
 
     .mc-empty, .mc-error, .mc-loading {
-      grid-column: 1 / -1; font-size: 14px; color: var(--mc-ink-soft); padding: 40px 12px;
-      text-align: center; border: 1px dashed var(--mc-line); border-radius: var(--mc-radius);
+      grid-column: 1 / -1; font-size: 14px; padding: 40px 12px;
+      text-align: center; border: 1px dashed #38445B; border-radius: var(--mc-radius);
     }
     .mc-error { color: #ff8b7a; border-color: #4a2620; background: #21130f; }
 
     .mc-toast {
-      position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(8px);
-      background: var(--mc-surface-2); border: 1px solid var(--mc-line); color: var(--mc-ink);
-      padding: 10px 18px; border-radius: 999px; font-size: 13px; font-weight: 600;
-      opacity: 0; pointer-events: none; transition: opacity 180ms ease, transform 180ms ease;
-      z-index: 9999; box-shadow: 0 12px 28px -8px rgba(0,0,0,0.6);
+      position: fixed; left: 50%; top: 48px; transform: translateX(-50%) translateY(8px);
+      color: var(--mc-text); background: #181A20; box-shadow: 0 4px 28px 0 rgba(255, 255, 255, 0.40);
+      padding: 16px 24px; border-radius: 8px; font-size: 20px; font-weight: 300;
+      z-index: 9; pointer-events: none; transition: opacity 180ms ease, transform 180ms ease;
     }
     .mc-toast[data-visible="true"] { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
 
@@ -181,8 +128,8 @@
       .mc-cta, .mc-filter-chevron, .mc-toast { transition: none; }
     }
     @media (min-width: 720px) {
-      .mc-grid { display: flex; justify-content: flex-end; }
-      .mc-toolbar { justify-content: flex-start; }
+      .mc-grid { grid-template-columns: repeat(2, 1fr); }
+      .mc-toolbar { display: flex; justify-content: flex-end; }
       .mc-filter { width: auto; }
     }
   `;
@@ -205,14 +152,14 @@
         <div class="mc-filter" data-filter="status" data-open="false">
           <span class="mc-filter-label">Status</span>
           <button class="mc-filter-btn" type="button" aria-haspopup="listbox">
-            <span class="mc-filter-current">Available</span>${ICON_CHEVRON}
+            <span class="mc-filter-current">${STATUSES.ready}</span>${ICON_CHEVRON}
           </button>
           <div class="mc-filter-menu" role="listbox"></div>
         </div>
         <div class="mc-filter" data-filter="type" data-open="false">
           <span class="mc-filter-label">Type</span>
           <button class="mc-filter-btn" type="button" aria-haspopup="listbox">
-            <span class="mc-filter-current">All</span>${ICON_CHEVRON}
+            <span class="mc-filter-current">${TYPES.all}</span>${ICON_CHEVRON}
           </button>
           <div class="mc-filter-menu" role="listbox"></div>
         </div>
@@ -230,47 +177,46 @@
     const div = document.createElement('div');
     div.textContent = String(str ?? '');
     return div.innerHTML;
-  };
-
-  const getByPath = (obj, path) => path.split('.').reduce((acc, key) => (acc && typeof acc === 'object' ? acc[key] : undefined), obj);
-
-  function matchesStatusFilter(mission, filterValue) {
-    switch (filterValue) {
-      case 'available': return mission.status === 'ready' && mission.enabled !== false;
-      case 'active': return mission.status === 'active' || mission.status === 'paused';
-      case 'completed': return mission.status === 'completed';
-      case 'expired': return mission.enabled === false;
-      default: return true;
-    }
   }
 
-  function resolveCta(mission, activeMissionExists, isDisabled) {
-    if (isDisabled) return { action: 'locked', label: 'Expired', disabled: true };
+  // business logic for types; should be set on BE?
+  function assignMissionTypes(missions) {
+    return missions.map(m => {
+      if(m.expiresAt) m.type = 'promo';
+      else if (m.tasks.length === 1) m.type = 'primary';
+      else if (m.tasks.length === 2) m.type = 'secondary';
+      else if (m.tasks.length === 3) m.type = 'tertiary';
+      return m;
+    })
+  }
 
-    switch (mission.status) {
+  function matchFilters(missions, filters) {
+    return missions.filter((m) => 
+      (filters.type === 'all' || m.type === filters.type) &&
+      (filters.status === 'all' || m.status === filters.status || (m.status === 'paused' && filters.status === 'active')));
+  }
+
+  function resolveCta(mission, status) {
+    switch (status) {
       case 'ready':
-        return activeMissionExists
-          ? { action: 'locked', label: 'Finish active mission first', disabled: true }
-          : { action: 'enroll', label: 'Enroll', disabled: false };
-      case 'active': {
-        const allDone = mission.tasks?.length && mission.tasks.every((t) => t.completed);
-        return allDone
-          ? { action: 'claim', label: 'Claim Reward', disabled: false }
-          : { action: 'pause', label: 'Pause', disabled: false };
-      }
+        return { action: 'enroll', label: 'Enroll', disabled: false };
+      case 'active':
+        return { action: 'pause', label: 'Pause', disabled: false };
       case 'paused':
-        return activeMissionExists
-          ? { action: 'locked', label: 'Finish active mission first', disabled: true }
-          : { action: 'resume', label: 'Resume', disabled: false };
+        return { action: 'resume', label: 'Resume', disabled: false };
       case 'completed':
-        return { action: 'done', label: 'Claimed', disabled: true };
+        return mission.claimedAt
+          ? { action: 'done', label: 'Claimed', disabled: true }
+          : { action: 'claim', label: 'Claim Reward', disabled: false };
+      case 'expired':
+        return { action: 'locked', label: 'Expired', disabled: true };
       default:
         return { action: 'locked', label: 'Unavailable', disabled: true };
     }
   }
 
-  function formatCountdown(endDateIso) {
-    const diffMs = new Date(endDateIso).getTime() - Date.now();
+  function formatCountdown(expiresAtIso) {
+    const diffMs = new Date(expiresAtIso).getTime() - Date.now();
     if (diffMs <= 0) return 'Expired';
     const totalMinutes = Math.floor(diffMs / 60000);
     const hours = Math.floor(totalMinutes / 60);
@@ -278,16 +224,8 @@
     return `Expires in ${hours}h:${String(minutes).padStart(2, '0')}m`;
   }
 
-  function renderCardArt(type, theme) {
-    const imageUrl = CARD_IMAGE_TYPES.includes(type) ? theme.cardImages?.[type] : null;
-    if (!imageUrl) return;
-
-    const safeUrl = encodeURI(String(imageUrl)).replace(/"/g, '%22');
-    return `<div class="mc-card-art" data-image="true" aria-hidden="true" style="background-image:url(&quot;${safeUrl}&quot;)"></div>`;
-  }
-
   function renderTaskList(tasks) {
-    if (!tasks.length) return '';
+    if (!tasks || !tasks.length) return '';
     const items = tasks
       .map((t) => `
         <li class="mc-task" data-completed="${!!t.completed}">
@@ -298,10 +236,8 @@
   }
 
   function renderFilterOptions(options, selectedValue) {
-    return options
-      .map((o) => `<div class="mc-filter-option" role="option" data-value="${o.value}" data-selected="${
-        selectedValue === o.value
-      }">${escapeHtml(o.label)}</div>`)
+    return Object.keys(options)
+      .map((key) => `<div class="mc-filter-option" role="option" data-value="${escapeHtml(key)}" data-selected="${selectedValue === key}">${escapeHtml(options[key])}</div>`)
       .join('');
   }
 
@@ -311,7 +247,7 @@
 
   class MissionControl extends HTMLElement {
     static get observedAttributes() {
-      return ['api-base', 'theme'];
+      return ['api-base'];
     }
 
     constructor() {
@@ -321,16 +257,15 @@
 
       this._missions = [];
       this._pendingIds = new Set();
-      this._theme = {};
-      this._filters = { status: 'available', type: 'all' };
-      this._countdownTimer = null;
-      this._toastTimer = null;
+      this._timerToast = null;
+      this._timerCountdown = null;
+      this._filters = { status: 'ready', type: 'all' };
 
       this._contentEl = this.shadowRoot.getElementById('mc-content');
       this._toastEl = this.shadowRoot.getElementById('mc-toast');
 
       this._contentEl.addEventListener('click', (e) => this._onCardClick(e));
-      this._onDocClick = (e) => {
+      this._onClickOutside = (e) => {
         if (!e.composedPath().some((el) => el.classList?.contains('mc-filter'))) this._closeAllFilters();
       };
 
@@ -338,35 +273,23 @@
     }
 
     connectedCallback() {
-      document.addEventListener('click', this._onDocClick);
-      if (this.hasAttribute('theme')) this._setThemeFromAttribute(this.getAttribute('theme'));
-      this.load();
-      this._countdownTimer = setInterval(() => this._updateTimers(), 60000);
+      document.addEventListener('click', this._onClickOutside);
+      if (!this._missions.length) this.load();
+      this._timerCountdown = setInterval(() => this._updateTimers(), 60000);
     }
 
     disconnectedCallback() {
-      document.removeEventListener('click', this._onDocClick);
-      clearInterval(this._countdownTimer);
+      document.removeEventListener('click', this._onClickOutside);
+      clearInterval(this._timerCountdown);
     }
 
     attributeChangedCallback(name, oldVal, newVal) {
       if (oldVal === newVal || !this.isConnected) return;
       if (name === 'api-base') this.load();
-      if (name === 'theme') this._setThemeFromAttribute(newVal);
     }
 
     get apiBase() {
       return this.getAttribute('api-base') || '/api';
-    }
-
-    get theme() {
-      return this._theme;
-    }
-
-    set theme(value) {
-      this._applyTheme(value || {});
-      const serialized = JSON.stringify(value || {});
-      if (this.getAttribute('theme') !== serialized) this.setAttribute('theme', serialized);
     }
 
     refresh() {
@@ -378,41 +301,21 @@
       try {
         const res = await fetch(`${this.apiBase}/missions`);
         if (!res.ok) throw new Error(`Request failed (${res.status})`);
-        this._missions = (await res.json()) || [];
-        console.log('this._missions: ', this._missions)
+        this._missions = assignMissionTypes(await res.json()) || [];
         this._render();
       } catch (err) {
         this._renderState('error', err.message || 'Could not load missions.');
       }
     }
 
-    _setThemeFromAttribute(rawValue) {
-      if (!rawValue) return this._applyTheme({});
-      try {
-        this._applyTheme(JSON.parse(rawValue));
-      } catch (err) {
-        console.warn(`[${TAG_NAME}] Invalid JSON in "theme" attribute, falling back to defaults.`, err);
-        this._applyTheme({});
-      }
-    }
-
-    _applyTheme(themeObj) {
-      this._theme = themeObj || {};
-      for (const [path, cssVar] of Object.entries(THEME_PATH_TO_CSS_VAR)) {
-        const value = getByPath(this._theme, path);
-        value ? this.style.setProperty(cssVar, value) : this.style.removeProperty(cssVar);
-      }
-      if (this._missions.length) this._render();
-    }
-
     _initFilters() {
-      this._typeFilterOptions = [{ value: 'all', label: 'All' }, ...Object.entries(TYPE_LABELS).map(([value, label]) => ({ value, label }))];
-      this._paintFilterMenu('status', STATUS_FILTERS);
-      this._paintFilterMenu('type', this._typeFilterOptions);
+      const { paused, ...filtersStatuses } = STATUSES
+      const filtersTypes = TYPES
+      this._paintFilterMenu('status', filtersStatuses);
+      this._paintFilterMenu('type', TYPES);
 
       this.shadowRoot.querySelectorAll('.mc-filter').forEach((filterEl) => {
         const key = filterEl.dataset.filter;
-        const options = key === 'status' ? STATUS_FILTERS : this._typeFilterOptions;
 
         filterEl.querySelector('.mc-filter-btn').addEventListener('click', (e) => {
           e.stopPropagation();
@@ -424,6 +327,7 @@
         filterEl.querySelector('.mc-filter-menu').addEventListener('click', (e) => {
           const opt = e.target.closest('.mc-filter-option');
           if (!opt) return;
+          const options = key === 'status' ? filtersStatuses : filtersTypes;
           this._filters[key] = opt.dataset.value;
           this._paintFilterMenu(key, options);
           filterEl.querySelector('.mc-filter-current').textContent = opt.textContent;
@@ -461,10 +365,11 @@
         }
         const { mission } = await res.json();
         this._applyMissionUpdate(mission);
-        this._toast(TOAST_MESSAGES[action] || 'Done.');
+        // this._toast();
         this.dispatchEvent(new CustomEvent('mission-action', { detail: { id, action, mission }, bubbles: true, composed: true }));
       } catch (err) {
-        this._toast(err.message || 'Something went wrong.', true);
+        // this._toast();
+        this.dispatchEvent(new CustomEvent('mission-error', { detail: { id, action, error: err }, bubbles: true, composed: true }));
       } finally {
         this._pendingIds.delete(id);
         this._render();
@@ -483,61 +388,59 @@
       }
     }
 
-    _toast(message, isError) {
-      clearTimeout(this._toastTimer);
-      this._toastEl.textContent = message;
-      this._toastEl.style.borderColor = isError ? '#5a2c22' : '';
-      this._toastEl.style.color = isError ? '#ff8b7a' : '';
-      this._toastEl.dataset.visible = 'true';
-      this._toastTimer = setTimeout(() => (this._toastEl.dataset.visible = 'false'), 2600);
-    }
+    // _toast(message) {
+    //   clearTimeout(this._timerToast);
+    //   this._toastEl.textContent = message;
+    //   this._toastEl.style.borderColor = isError ? '#5a2c22' : '';
+    //   this._toastEl.style.color = isError ? '#ff8b7a' : '';
+    //   this._toastEl.dataset.visible = 'true';
+    //   this._timerToast = setTimeout(() => (this._toastEl.dataset.visible = 'false'), 2600);
+    // }
 
     _updateTimers() {
       this.shadowRoot.querySelectorAll('.mc-timer[data-end]').forEach((el) => {
         el.querySelector('.mc-timer-text').textContent = formatCountdown(el.dataset.end);
       });
+      if (this._missions.some((m) => new Date(m.expiresAt).getTime() - Date.now() <= 0)) {
+        this._render();
+      }
     }
 
-    _renderState(kind, message) {
+    _render() {
+      const filtered = matchFilters(this._missions, this._filters);
+      if (!filtered.length) return this._renderState('empty');
+
+      const cards = filtered.map((m) => this._renderCard(m)).join('');
+      this._contentEl.innerHTML = `<div class="mc-grid">${cards}</div>`;
+    }
+
+    _renderState(state, message) {
       const markup = {
         loading: `<div class="mc-loading">Loading missions…</div>`,
         error: `<div class="mc-error">${escapeHtml(message)}</div>`,
         empty: `<div class="mc-empty">No missions match these filters.</div>`
-      }[kind];
+      }[state];
       this._contentEl.innerHTML = `<div class="mc-grid">${markup}</div>`;
     }
 
-    _render() {
-      const filtered = this._missions.filter(
-        (m) => matchesStatusFilter(m, this._filters.status) && (this._filters.type === 'all' || m.type === this._filters.type)
-      );
-      if (!filtered.length) return this._renderState('empty');
-
-      const activeMissionExists = this._missions.some((m) => m.status === 'active');
-      const cards = filtered.map((m) => this._renderCard(m, activeMissionExists)).join('');
-      this._contentEl.innerHTML = `<div class="mc-grid">${cards}</div>`;
-    }
-
-    _renderCard(mission, activeMissionExists) {
-      const { id, title, type, enabled, status, endDate, tasks = [] } = mission;
-      const isDisabled = enabled === false;
+    _renderCard(mission) {
+      const { id, title, type, status, expiresAt, tasks = [] } = mission;
       const isPending = this._pendingIds.has(id);
-      const cta = resolveCta(mission, activeMissionExists, isDisabled);
+      const cta = resolveCta(mission, status);
 
-      const showCountdown = type === 'promo' && endDate && status !== 'completed';
+      const showCountdown = Boolean(expiresAt) && status !== 'completed' && status !== 'expired';
       const headerRight = showCountdown
-        ? `<span class="mc-timer" data-end="${endDate}">${ICON_TIMER}<span class="mc-timer-text">${formatCountdown(endDate)}</span></span>`
-        : `<span class="mc-status-pill" data-status="${isDisabled ? 'locked' : status}">${isDisabled ? 'Expired' : STATUS_LABELS[status] || status}</span>`;
+        ? `<span class="mc-timer" data-end="${expiresAt}">${ICON_TIMER}<span class="mc-timer-text">${formatCountdown(expiresAt)}</span></span>`
+        : `<span class="mc-status-pill" data-status="${status}">${STATUSES[status] || status}</span>`;
 
       return `
-        <article class="mc-card" data-status="${status}" data-type="${type}" data-disabled="${isDisabled}">
-          ${renderCardArt(type, this._theme)}
+        <article class="mc-card" data-status="${status}" data-type="${type || ''}">
           <div class="mc-card-top">
-            <div class="mc-card-title-group"><h3 class="mc-card-title">${escapeHtml(title)}</h3></div>
+            <h3 class="mc-card-title">${escapeHtml(title)}</h3>
             ${headerRight}
           </div>
           ${renderTaskList(tasks)}
-          <div class="mc-footer">
+          <div class="mc-card-footer">
             <button class="mc-cta" type="button" data-id="${escapeHtml(id)}" data-action="${cta.action}" ${cta.disabled || isPending ? 'disabled' : ''}>
               ${isPending ? 'Working…' : escapeHtml(cta.label)}
             </button>

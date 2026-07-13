@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mission Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap"
+    rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: "Titillium Web", sans-serif;
+      background: #181A20;
+      color: #c9ccd1;
+      padding: 40px 20px 100px;
+    }
+    .host-shell {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    mission-control {
+      --mc-font: "Titillium Web", sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="host-shell">
+    <mission-control id="themed-control"
+      api-base="https://ba32b5f2-8f16-4a46-a413-4f07d181bd38.mock.pstmn.io"></mission-control>
+    <br />
+    <br />
+    <br />
+    <!-- <mission-control id="themed-control" api-base="https://a20c7c6d-26dd-42e3-b6be-cdfd8b42e310.mock.pstmn.io"></mission-control> -->
+  </div>
+
+  <script src="./mission-control.js"></script>
+</body>
+</html>
