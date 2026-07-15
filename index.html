@@ -22,6 +22,32 @@
       color: #c9ccd1;
       padding: 40px 20px 100px;
     }
+    @media (min-width: 1920px) {
+      html .content-fit {
+        max-width: 1812px;
+      }
+    }
+    @media (min-width: 1366px) {
+      html .content-fit {
+        max-width: 1258px;
+      }
+    }
+    @media (min-width: 992px) {
+      html .content-fit {
+        max-width: calc(100% - 108px);
+      }
+    }
+    @media (min-width: 480px) {
+      html .content-fit {
+        max-width: calc(100% - 32px);
+      }
+    }
+    html .content-fit {
+      margin: 0 auto;
+      padding-left: 16px;
+      padding-right: 16px;
+      width: 100%;
+    }
     .host-shell {
       max-width: 1100px;
       margin: 0 auto;
@@ -33,7 +59,8 @@
 </head>
 
 <body>
-  <div class="host-shell">
+  <div class="host-shell content-fit">
+    <h1>Mission control</h1>
     <mission-control id="themed-control"
       api-base="https://ba32b5f2-8f16-4a46-a413-4f07d181bd38.mock.pstmn.io"></mission-control>
     <br />
