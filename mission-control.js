@@ -53,7 +53,7 @@
     .mc-filter { position: relative; display: flex; flex-direction: column; gap: 2px; width: 100%; }
     .mc-filter-label { font-size: 12px; font-weight: 300; opacity: 0.7; text-transform: uppercase; }
     .mc-filter-btn,
-    .mc-filter-menu { border-radius: var(--mc-radius); color: var(--mc-text); background: var(--mc-filter-bg); border: 1px solid #38445B; box-shadow: 0 4px 8px #00000080; }
+    .mc-filter-menu { border-radius: var(--mc-radius); color: var(--mc-text); background: var(--mc-filter-bg); border: 1px solid #38445B; box-shadow: 0 4px 8px #00000050; }
     .mc-filter-btn {
       display: flex; align-items: center; justify-content: space-between; min-width: 190px; z-index: 2; text-transform: uppercase;
       font-size: 16px; font-weight: 600; padding: 16px; cursor: pointer; appearance: none; filter: drop-shadow(0 4px 8px #00000050);
@@ -105,7 +105,7 @@
     }
     .mc-cta:hover:not(:disabled) { filter: brightness(1.1); }
     .mc-cta:disabled { cursor: not-allowed; opacity: 0.55; }
-    .mc-cta[data-action="resume"] { background: var(--mc-tertiary); }
+    .mc-cta[data-action="resume"] { background: var(--mc-tertiary); box-shadow: inset 0 0 200px #00000040; }
     .mc-cta[data-action="claim"]  { background: var(--mc-secondary); }
     .mc-cta[data-action="done"]   { background: var(--mc-secondary); }
     .mc-empty, .mc-error, .mc-loading {
@@ -115,11 +115,11 @@
     .mc-error { color: var(--mc-danger); border: 1px solid rgb(from var(--mc-danger) r g b / 75%); }
 
     /* ---- Modal  ---- */
-    .mc-modal-backdrop {
+    .mc-modal-overlay {
       position: fixed; inset: 0; z-index: 999; display: flex; align-items: center; justify-content: center; padding: 24px;
       backdrop-filter: blur(2px); background: #00000085;
     }
-    .mc-modal-backdrop[hidden] { display: none; }
+    .mc-modal-overlay[hidden] { display: none; }
     .mc-modal {
       position: relative; display: flex; flex-direction: column; border-radius: var(--mc-radius); padding: 16px 24px;
       width: min(600px, 100%); min-height: 300px; background: var(--mc-modal-bg); box-shadow: 0 4px 28px 0px #ffffff40;
@@ -157,32 +157,32 @@
   const TEMPLATE = document.createElement('template');
   TEMPLATE.innerHTML = `
     <style>${STYLES}</style>
-    <div class="mc-root" part="root">
-      <div class="mc-toolbar" part="toolbar">
+    <div class="mc-root">
+      <div class="mc-toolbar" part="mc-toolbar">
         <div class="mc-filter" data-filter="status" data-open="false">
           <span class="mc-filter-label" data-role="status-label"></span>
-          <button class="mc-filter-btn" type="button" part="filter-button" aria-haspopup="listbox">
+          <button class="mc-filter-btn" type="button" part="mc-filter-btn" aria-haspopup="listbox">
             <span class="mc-filter-current"></span>${ICON_CHEVRON}
           </button>
-          <div class="mc-filter-menu" part="filter-menu" role="listbox"></div>
+          <div class="mc-filter-menu" part="mc-filter-menu" role="listbox"></div>
         </div>
         <div class="mc-filter" data-filter="type" data-open="false">
           <span class="mc-filter-label" data-role="type-label"></span>
-          <button class="mc-filter-btn" type="button" aria-haspopup="listbox">
+          <button class="mc-filter-btn" type="button" part="mc-filter-btn" aria-haspopup="listbox">
             <span class="mc-filter-current"></span>${ICON_CHEVRON}
           </button>
-          <div class="mc-filter-menu" role="listbox"></div>
+          <div class="mc-filter-menu" part="mc-filter-menu" role="listbox"></div>
         </div>
       </div>
-      <div id="mc-content" part="content"></div>
+      <div id="mc-content"></div>
     </div>
-    <div class="mc-modal-backdrop" id="mc-modal-backdrop" part="modal-backdrop" hidden>
-      <div class="mc-modal" part="modal" role="dialog" aria-modal="true">
-        <button class="mc-modal-close" id="mc-modal-close" type="button" part="modal-close" aria-label="Close">&times;</button>
-        <h2 class="mc-modal-title" id="mc-modal-title" part="modal-title"></h2>
-        <p class="mc-modal-subtitle" id="mc-modal-subtitle" part="modal-subtitle"></p>
-        <div class="mc-modal-body" id="mc-modal-body" part="modal-body"></div>
-        <button class="mc-cta" id="mc-modal-cta" type="button" part="modal-cta"></button>
+    <div class="mc-modal-overlay" id="mc-modal-overlay" part="mc-modal-overlay" hidden>
+      <div class="mc-modal" part="mc-modal" role="dialog" aria-modal="true">
+        <button class="mc-modal-close" id="mc-modal-close" type="button" aria-label="Close">&times;</button>
+        <h2 class="mc-modal-title" id="mc-modal-title" part="mc-modal-title"></h2>
+        <p class="mc-modal-subtitle" id="mc-modal-subtitle" part="mc-modal-subtitle"></p>
+        <div class="mc-modal-body" id="mc-modal-body" part="mc-modal-body"></div>
+        <button class="mc-cta" id="mc-modal-cta" type="button" part="mc-modal-cta"></button>
       </div>
     </div>
   `;
@@ -217,9 +217,6 @@
     return 'tertiary';
   }
 
-  // expiresAt always wins over a stale `status`, unless the mission is completed.
-  // Computed on every read (never cached on the mission) so a countdown hitting
-  // zero is reflected immediately, without mutating the source data.
   function effectiveStatus(mission) {
     if (mission.status !== 'completed' && mission.expiresAt && new Date(mission.expiresAt).getTime() <= Date.now()) return 'expired';
     return mission.status;
@@ -237,11 +234,11 @@
     if (!tasks?.length) return '';
     const items = tasks
       .map((t) => `
-        <li class="mc-task" part="task" data-completed="${!!t.completed}">
+        <li class="mc-task" part="mc-task" data-completed="${!!t.completed}">
           <span class="mc-task-dot" aria-hidden="true"></span>${escapeHtml(t.title)}
         </li>`)
       .join('');
-    return `<ul class="mc-tasks" part="tasks">${items}</ul>`;
+    return `<ul class="mc-tasks" part="mc-tasks">${items}</ul>`;
   }
 
   function renderFilterOptions(options, selectedValue) {
@@ -275,7 +272,7 @@
       this._countdownTimerId = null;
 
       this._contentEl = this.shadowRoot.getElementById('mc-content');
-      this._modalBackdropEl = this.shadowRoot.getElementById('mc-modal-backdrop');
+      this._modalOverlayEl = this.shadowRoot.getElementById('mc-modal-overlay');
       this._modalTitleEl = this.shadowRoot.getElementById('mc-modal-title');
       this._modalSubtitleEl = this.shadowRoot.getElementById('mc-modal-subtitle');
       this._modalBodyEl = this.shadowRoot.getElementById('mc-modal-body');
@@ -283,15 +280,15 @@
 
       this._contentEl.addEventListener('click', (e) => this._onCardClick(e));
       this.shadowRoot.getElementById('mc-modal-close').addEventListener('click', () => this._closeModal());
-      this._modalBackdropEl.addEventListener('click', (e) => {
-        if (e.target === this._modalBackdropEl) this._closeModal();
+      this._modalOverlayEl.addEventListener('click', (e) => {
+        if (e.target === this._modalOverlayEl) this._closeModal();
       });
 
       this._onDocumentClick = (e) => {
         if (!e.composedPath().some((el) => el.classList?.contains('mc-filter'))) this._closeAllFilters();
       };
       this._onKeydown = (e) => {
-        if (e.key === 'Escape' && !this._modalBackdropEl.hidden) this._closeModal();
+        if (e.key === 'Escape' && !this._modalOverlayEl.hidden) this._closeModal();
       };
 
       this._initFilters();
@@ -516,11 +513,11 @@
       this._modalCtaEl.dataset.action = action;
       this._modalCtaEl.disabled = false;
       this._modalCtaEl.onclick = onConfirm;
-      this._modalBackdropEl.hidden = false;
+      this._modalOverlayEl.hidden = false;
     }
 
     _closeModal() {
-      this._modalBackdropEl.hidden = true;
+      this._modalOverlayEl.hidden = true;
       this._pendingContext = null;
     }
 
@@ -580,11 +577,11 @@
 
     _renderState(kind, message) {
       const markup = {
-        loading: `<div class="mc-loading" part="state-loading">${escapeHtml(this._i18n.states.loading)}</div>`,
-        error: `<div class="mc-error" part="state-error">${escapeHtml(message)}</div>`,
-        empty: `<div class="mc-empty" part="state-empty">${escapeHtml(this._i18n.states.empty)}</div>`
+        loading: `<div class="mc-loading" part="mc-state-loading">${escapeHtml(this._i18n.states.loading)}</div>`,
+        empty: `<div class="mc-empty" part="mc-state-empty">${escapeHtml(this._i18n.states.empty)}</div>`,
+        error: `<div class="mc-error" part="mc-state-error">${escapeHtml(message)}</div>`
       }[kind];
-      this._contentEl.innerHTML = `<div class="mc-grid" part="grid">${markup}</div>`;
+      this._contentEl.innerHTML = `<div class="mc-grid" part="mc-grid">${markup}</div>`;
     }
 
     _render() {
@@ -592,7 +589,7 @@
       if (!filtered.length) return this._renderState('empty');
 
       const cards = filtered.map((m) => this._renderCard(m)).join('');
-      this._contentEl.innerHTML = `<div class="mc-grid" part="grid">${cards}</div>`;
+      this._contentEl.innerHTML = `<div class="mc-grid" part="mc-grid">${cards}</div>`;
     }
 
     _renderCard(mission) {
@@ -602,19 +599,19 @@
 
       const isLivePromo = type === 'promo' && status !== 'completed' && status !== 'expired';
       const headerRight = isLivePromo
-        ? `<span class="mc-timer" part="timer" data-end="${expiresAt}"><span class="mc-timer-text">${this._formatCountdown(expiresAt)}</span>${ICON_TIMER}</span>
-           <span class="mc-status-pill" part="status-pill" data-status="promo">${escapeHtml(this._i18n.typeLabels.promo)}</span>`
-        : `<span class="mc-status-pill" part="status-pill" data-status="${status}">${escapeHtml(this._i18n.statusLabels[status] || status)}</span>`;
+        ? `<span class="mc-timer" part="mc-timer" data-end="${expiresAt}"><span class="mc-timer-text">${this._formatCountdown(expiresAt)}</span>${ICON_TIMER}</span>
+           <span class="mc-status-pill" part="mc-status-pill" data-status="promo">${escapeHtml(this._i18n.typeLabels.promo)}</span>`
+        : `<span class="mc-status-pill" part="mc-status-pill" data-status="${status}">${escapeHtml(this._i18n.statusLabels[status] || status)}</span>`;
 
       return `
-        <article class="mc-card" part="card" data-status="${status}" data-type="${type || ''}">
-          <div class="mc-card-top" part="card-top">
-            <h3 class="mc-card-title" part="card-title">${escapeHtml(title)}</h3>
+        <article class="mc-card" part="mc-card" data-status="${status}" data-type="${type || ''}">
+          <div class="mc-card-top">
+            <h3 class="mc-card-title" part="mc-card-title">${escapeHtml(title)}</h3>
             ${headerRight}
           </div>
           ${renderTaskList(tasks)}
-          <div class="mc-card-footer" part="card-footer">
-            <button class="mc-cta" type="button" part="cta" data-id="${escapeHtml(id)}" data-action="${cta.action}" ${cta.disabled ? 'disabled' : ''}>
+          <div class="mc-card-footer">
+            <button class="mc-cta" type="button" part="mc-cta" data-id="${escapeHtml(id)}" data-action="${cta.action}" ${cta.disabled ? 'disabled' : ''}>
               ${escapeHtml(cta.label)}
             </button>
           </div>

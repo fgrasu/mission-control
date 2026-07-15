@@ -128,14 +128,12 @@ mission-control {
 
 **2. `::part()`** — For anything above variables can't reach. Every structural element ships a `part` attribute:
 
-| Part                              | Element                                         |
-|-----------------------------------|-------------------------------------------------|
-| `toolbar`, `filter-button`, `filter-menu`                                           |
-| `grid`                                                                              |
-| `card`, `card-top`, `card-title`, `card-footer`                                     |
-| `status-pill`, `timer`, `tasks`, `task`, `cta`                                      |
-| `state-loading`, `state-error`, `state-empty`                                       |
-| `modal-backdrop`, `modal`, `modal-close`, `modal-title`, `modal-subtitle`, `modal-body`, `modal-cta` |
+| Part                               | Element                                          |
+|------------------------------------|--------------------------------------------------|
+| `mc-toolbar`, `mc-filter-btn`, `mc-filter-menu`                    | The filter toolbar            |
+| `mc-grid`, `mc-state-loading`, `mc-state-empty`, `mc-state-error`  | The card grid container       |
+| `mc-card`, `mc-card-title`, `mc-status-pill`, `mc-timer`, `mc-tasks`, `mc-task`, `mc-cta` | The cards and their subcomponents.    |
+| `mc-modal-overlay`, `mc-modal`, `mc-modal-title`, `mc-modal-subtitle`, `mc-modal-body`, `mc-modal-cta` | The modals |
 
 ```css
 mission-control::part(card) {
@@ -171,12 +169,6 @@ el.addEventListener('mission-error', (e) => {
 ## Browser support
 
 Custom Elements v1 + Shadow DOM v1: Chrome/Edge 67+, Firefox 63+, Safari 10.1+. No polyfills used or required for any currently-maintained browser.
-
-The modal backdrop uses `backdrop-filter: blur()` as a progressive
-enhancement (supported in Chrome/Edge 76+, Safari 9+, Firefox 103+). On
-older browsers the modal still displays correctly with a plain dark
-overlay — the blur is purely cosmetic and unsupported browsers simply
-ignore the declaration.
 
 
 ## License
