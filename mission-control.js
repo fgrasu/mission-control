@@ -38,8 +38,8 @@
       --mc-tertiary: #F5D547;
       --mc-danger: #FF6B5C;
       --mc-modal-bg: #181A20;
-      --mc-filter-bg: linear-gradient(180deg, #323744 0%, #252932 100%);
-      --mc-card-bg: linear-gradient(180deg, #242D3E 0%, #2C3649 100%);
+      --mc-card-bg: #252F40;
+      --mc-filter-bg: linear-gradient(180deg, #323744, #181A20);
       display: block;
       font-family: var(--mc-font);
       color: var(--mc-text);
@@ -55,7 +55,7 @@
     .mc-filter-btn,
     .mc-filter-menu { border-radius: var(--mc-radius); color: var(--mc-text); background: var(--mc-filter-bg); border: 1px solid #38445B; box-shadow: 0 4px 8px #00000050; }
     .mc-filter-btn {
-      display: flex; align-items: center; justify-content: space-between; min-width: 190px; z-index: 2; text-transform: uppercase;
+      display: flex; align-items: center; justify-content: space-between; z-index: 2; text-transform: uppercase;
       font-size: 16px; font-weight: 600; padding: 16px; cursor: pointer; appearance: none; filter: drop-shadow(0 4px 8px #00000050);
     }
     .mc-filter-chevron { flex: 0 0 auto; width: 12px; height: 12px; transition: transform 0.2s ease; color: var(--mc-tertiary); }
@@ -70,9 +70,9 @@
     .mc-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 20px; }
     .mc-card {
       position: relative; display: flex; flex-direction: column; gap: 24px; border-radius: var(--mc-radius); padding: 16px;
-      background: var(--mc-card-bg); border: 1px solid #38445B; box-shadow: 0 4px 8px 0 #00000080;
+      background-color: var(--mc-card-bg); border: 1px solid #38445B; box-shadow: 0 4px 8px 0 #00000080;
     }
-    .mc-card[data-type="promo"] { background: #2f2a21; box-shadow: 0 4px 16px 0 #dbc04680; border: 1px solid #dbc04650; }
+    .mc-card[data-type="promo"] { background-color: #2f2a21; box-shadow: 0 4px 16px 0 #dbc04680; border: 1px solid #dbc04650; }
     .mc-card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .mc-card-title { font-size: 20px; font-weight: 700; margin: 0; line-height: 1.3; text-shadow: 0 4px 4px #00000075; }
     .mc-timer { display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 700; color: var(--mc-tertiary); white-space: nowrap; }
@@ -80,7 +80,7 @@
     .mc-timer svg { width: 32px; height: 32px; }
     .mc-status-pill {
       flex: none; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 4px 10px; border-radius: 16px;
-      border: 1px solid #ffffff; color: var(--mc-text);
+      min-width: 70px; text-align: center; border: 1px solid #ffffff; color: var(--mc-text);
     }
     .mc-status-pill[data-status="active"]    { border-color: var(--mc-primary); }
     .mc-status-pill[data-status="paused"]    { border-color: var(--mc-primary); }
@@ -89,7 +89,7 @@
     .mc-status-pill[data-status="promo"]     { border-color: var(--mc-tertiary); color: var(--mc-tertiary); }
     .mc-tasks { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
     .mc-task {
-      position: relative; flex: 1 1 160px; font-size: 13px; line-height: 1.3; padding: 10px 26px 10px 14px; border-radius: var(--mc-radius);
+      position: relative; flex: 1 1 160px; font-size: 13px; padding: 8px 20px 8px 16px; border-radius: var(--mc-radius);
       color: var(--mc-text); background: #1C2230; border-bottom: 2px solid transparent; box-shadow: 0 4px 8px 0 #00000025;
     }
     .mc-task[data-completed="true"] { border-bottom-color: var(--mc-secondary); }
@@ -104,7 +104,7 @@
       border-radius: var(--mc-radius); transition: filter 0.2s ease; color: var(--mc-text); background: var(--mc-primary);
     }
     .mc-cta:hover:not(:disabled) { filter: brightness(1.1); }
-    .mc-cta:disabled { cursor: not-allowed; opacity: 0.55; }
+    .mc-cta:disabled { cursor: not-allowed; box-shadow: inset 0 0 200px #00000060; }
     .mc-cta[data-action="resume"] { background: var(--mc-tertiary); box-shadow: inset 0 0 200px #00000040; }
     .mc-cta[data-action="claim"]  { background: var(--mc-secondary); }
     .mc-cta[data-action="done"]   { background: var(--mc-secondary); }
@@ -115,14 +115,11 @@
     .mc-error { color: var(--mc-danger); border: 1px solid rgb(from var(--mc-danger) r g b / 75%); }
 
     /* ---- Modal  ---- */
-    .mc-modal-overlay {
-      position: fixed; inset: 0; z-index: 999; display: flex; align-items: center; justify-content: center; padding: 24px;
-      backdrop-filter: blur(2px); background: #00000085;
-    }
+    .mc-modal-overlay { position: fixed; inset: 0; z-index: 999; backdrop-filter: blur(2px); background: #00000090; }
     .mc-modal-overlay[hidden] { display: none; }
     .mc-modal {
-      position: relative; display: flex; flex-direction: column; border-radius: var(--mc-radius); padding: 16px 24px;
-      width: min(600px, 100%); min-height: 300px; background: var(--mc-modal-bg); box-shadow: 0 4px 28px 0px #ffffff40;
+      position: relative; display: flex; flex-direction: column; padding: 16px 24px 24px;
+      width: min(600px, 100%); height: 100%; background: var(--mc-modal-bg); box-shadow: 0 4px 28px 0px #ffffff40;
     }
     .mc-modal button { margin-top: auto; }
     .mc-modal-close {
@@ -130,7 +127,7 @@
       width: 24px; height: 24px; border-radius: 50%; font-size: 16px; line-height: 1; cursor: pointer; 
       border: none; color: #14161f; background: #ffffff;
     }
-    .mc-modal-title { font-size: 26px; line-height: 1.2; font-weight: 700; margin: 0 0 16px; padding-right: 24px; }
+    .mc-modal-title { font-size: 26px; line-height: 1.2; font-weight: 700; margin: 4px 0 16px; padding-right: 24px; }
     .mc-modal-subtitle { font-size: 16px; font-weight: 300; opacity: 0.5; margin: 0 0 16px; }
     .mc-modal-body { font-size: 20px; font-weight: 300; margin-bottom: 16px; }
     .mc-modal-body p { margin: 0 0 8px; }
@@ -141,7 +138,9 @@
     @media (min-width: 720px) {
       .mc-grid { grid-template-columns: repeat(2, 1fr); }
       .mc-toolbar { display: flex; justify-content: flex-end; }
-      .mc-filter { width: auto; }
+      .mc-filter { width: auto; min-width: 190px; }
+      .mc-modal-overlay { padding: 24px; }
+      .mc-modal { border-radius: var(--mc-radius); height: auto; min-height: 300px; margin: 80px auto 0; }
     }
   `;
 
@@ -604,7 +603,7 @@
         : `<span class="mc-status-pill" part="mc-status-pill" data-status="${status}">${escapeHtml(this._i18n.statusLabels[status] || status)}</span>`;
 
       return `
-        <article class="mc-card" part="mc-card" data-status="${status}" data-type="${type || ''}">
+        <article class="mc-card" part="mc-card mc-card-${type}" data-status="${status}" data-type="${type || ''}">
           <div class="mc-card-top">
             <h3 class="mc-card-title" part="mc-card-title">${escapeHtml(title)}</h3>
             ${headerRight}

@@ -128,12 +128,13 @@ mission-control {
 
 **2. `::part()`** — For anything above variables can't reach. Every structural element ships a `part` attribute:
 
-| Part                               | Element                                          |
-|------------------------------------|--------------------------------------------------|
-| `mc-toolbar`, `mc-filter-btn`, `mc-filter-menu`                    | The filter toolbar            |
-| `mc-grid`, `mc-state-loading`, `mc-state-empty`, `mc-state-error`  | The card grid container       |
-| `mc-card`, `mc-card-title`, `mc-status-pill`, `mc-timer`, `mc-tasks`, `mc-task`, `mc-cta` | The cards and their subcomponents.    |
-| `mc-modal-overlay`, `mc-modal`, `mc-modal-title`, `mc-modal-subtitle`, `mc-modal-body`, `mc-modal-cta` | The modals |
+| Part                               | Element                                                           |
+|------------------------------------|-------------------------------------------------------------------|
+| `mc-toolbar`, `mc-filter-btn`, `mc-filter-menu`                    | The filter toolbar                |
+| `mc-grid`, `mc-state-loading`, `mc-state-empty`, `mc-state-error`  | The card grid container           |
+| `mc-card`, `mc-card-primary`, `mc-card-secondary`, `mc-card-tertiary` | The card                       |
+| `mc-card-title`, `mc-status-pill`, `mc-timer`, `mc-tasks`, `mc-task`, `mc-cta` | The card subcomponents.                |
+| `mc-modal-overlay`, `mc-modal`, `mc-modal-title`, `mc-modal-subtitle`, `mc-modal-body`, `mc-modal-cta` | The modals     |
 
 ```css
 mission-control::part(card) {
@@ -143,8 +144,8 @@ mission-control::part(card) {
 
 ### Attributes, properties & events
 
-| Name             | Type              | Description                                                     |
-|------------------|-------------------|-------------------------------------------------------------------|
+| Name             | Type              | Description                                                      |
+|------------------|-------------------|------------------------------------------------------------------|
 | `api-base`       | attribute         | Base URL for all fetch/post calls.                               |
 | `translations`   | attribute / property | Copy overrides — JSON string as an attribute, or a plain object as a property. See [Translations](#translations). |
 | `.refresh()`     | method            | Re-fetches `GET {api-base}/missions`.                            |

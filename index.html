@@ -20,7 +20,7 @@
       font-family: "Titillium Web", sans-serif;
       background: #181A20;
       color: #c9ccd1;
-      padding: 40px 20px 100px;
+      padding: 40px 0;
     }
     @media (min-width: 1920px) {
       html .content-fit {
@@ -55,6 +55,20 @@
     mission-control {
       --mc-font: "Titillium Web", sans-serif;
     }
+    mission-control::part(mc-card) {
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: auto 100%;
+    }
+    mission-control::part(mc-card-primary) {
+      background-image: url('https://res.cloudinary.com/duapf1iwb/image/upload/v1783420836/shuffle_kggd6i.webp');
+    }
+    mission-control::part(mc-card-secondary) {
+      background-image: url('https://res.cloudinary.com/duapf1iwb/image/upload/v1783420836/slot_j6hx5u.webp');
+    }
+    mission-control::part(mc-card-tertiary) {
+      background-image: url('https://res.cloudinary.com/duapf1iwb/image/upload/v1783420836/wheel_eyickn.webp');
+    }
   </style>
 </head>
 
@@ -63,10 +77,6 @@
     <h1>Mission control</h1>
     <mission-control id="themed-control"
       api-base="https://ba32b5f2-8f16-4a46-a413-4f07d181bd38.mock.pstmn.io"></mission-control>
-    <br />
-    <br />
-    <br />
-    <!-- <mission-control id="themed-control" api-base="https://a20c7c6d-26dd-42e3-b6be-cdfd8b42e310.mock.pstmn.io"></mission-control> -->
   </div>
 
   <script src="./mission-control.js"></script>
