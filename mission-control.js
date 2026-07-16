@@ -284,6 +284,7 @@
       });
 
       this._onDocumentClick = (e) => {
+        console.log('e: ', e.composedPath())
         if (!e.composedPath().some((el) => el.classList?.contains('mc-filter'))) this._closeAllFilters();
       };
       this._onKeydown = (e) => {
@@ -294,6 +295,8 @@
     }
 
     connectedCallback() {
+      console.log('connectedCallback');
+
       document.addEventListener('click', this._onDocumentClick);
       document.addEventListener('keydown', this._onKeydown);
       if (this.hasAttribute('translations')) this._setTranslationsFromAttribute(this.getAttribute('translations'));
@@ -308,6 +311,8 @@
     }
 
     attributeChangedCallback(name, oldVal, newVal) {
+      console.log('attributeChangedCallback name: ', name);
+
       if (oldVal === newVal || !this.isConnected) return;
       if (name === 'api-base') this.load();
       if (name === 'translations') this._setTranslationsFromAttribute(newVal);
@@ -326,10 +331,12 @@
     }
 
     refresh() {
+      console.log('refresh');
       return this.load();
     }
 
     async load() {
+      console.log('load')
       this._renderState('loading');
       try {
         const res = await fetch(`${this.apiBase}/missions`);
