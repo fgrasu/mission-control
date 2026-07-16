@@ -335,27 +335,6 @@
         const res = await fetch(`${this.apiBase}/missions`);
         if (!res.ok) throw new Error(`Request failed (${res.status})`);
         const missions = (await res.json()) || [];
-        missions.push({
-        "id": "123",
-        "title": "800 Free Spins",
-        "status": "ready",
-        "claimedAt": null,
-        "expiresAt": "2026-07-17T03:21:00.039Z",
-        "tasks": [
-            {
-                "title": "Confirm your email address in Settings",
-                "completed": true
-            },
-            {
-                "title": "Activate 2 Factor Authentication",
-                "completed": false
-            },
-            {
-                "title": "Add one game to Favourite Games",
-                "completed": false
-            }
-        ]
-        })
         this._missions = missions.map((m) => ({ ...m, type: deriveType(m) }));
         this._render();
       } catch (err) {
@@ -376,8 +355,8 @@
 
     _applyTranslations(overrides) {
       this._i18n = deepMerge(DEFAULT_I18N, overrides);
-      this._paintFilterLabels();
-      if (this._missions.length) this._render();
+      // this._paintFilterLabels();
+      this._render();
     }
 
     // "Paused" isn't its own filter tab — a paused mission still shows up under "Active".
