@@ -75,7 +75,6 @@ type Mission = {
 }
 ```
 
-
 ### Translations
 
 Translated text is supplied by the host page as a property or a JSON attribute:
