@@ -355,7 +355,7 @@
 
     _applyTranslations(overrides) {
       this._i18n = deepMerge(DEFAULT_I18N, overrides);
-      // this._paintFilterLabels();
+      this._initFilters();
       this._render();
     }
 
