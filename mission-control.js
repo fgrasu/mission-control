@@ -340,7 +340,7 @@
         "title": "800 Free Spins",
         "status": "ready",
         "claimedAt": null,
-        "expiresAt": "2026-07-16T08:21:00.039Z",
+        "expiresAt": "2026-07-17T03:21:00.039Z",
         "tasks": [
             {
                 "title": "Confirm your email address in Settings",
