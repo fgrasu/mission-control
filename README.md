@@ -87,7 +87,7 @@ document.querySelector('mission-control').translations = {
   typeLabels: { all: 'All', primary: 'Mystery Wheel', secondary: 'Mystery Slot', tertiary: 'Mystery Shuffle', promo: 'Promo' },
   ctaLabels: { enroll: 'Enroll', pause: 'Pause', resume: 'Resume', claim: 'Claim Reward', claimed: 'Claimed', expired: 'Expired', unavailable: 'Unavailable' },
   states: { loading: 'Loading missions…', error: 'Could not load missions.', empty: 'No missions match these filters.' },
-  countdown: { expiresIn: 'Expires in', expired: 'Expired' },
+  countdownLabel: 'Expires in',
   confirmModals: {
     enroll: { title: 'Are you sure you want to enroll in this mission?', body: '', confirmLabel: 'Enroll' },
     pause: { title: 'Are you sure you want to pause mission?', body: '', confirmLabel: 'Pause Mission' },
@@ -95,8 +95,8 @@ document.querySelector('mission-control').translations = {
     claim: { title: 'Are you sure you want to claim your reward?', body: '', confirmLabel: 'Claim Reward' }
   },
   successModals: {
-    enroll: { title: "Congrats! You're enrolled to this mission", body: '', ctaLabel: 'Go to Active Missions', ctaAction: 'goToActive' },
-    claim: { title: 'Congrats! Reward claimed', body: '', ctaLabel: 'Close', ctaAction: 'close' }
+    enroll: { title: "Congrats! You're enrolled to this mission", body: '', ctaLabel: 'Go to Active Missions' },
+    claim: { title: 'Congrats! Reward claimed', body: '', ctaLabel: 'Close' }
   },
   errorModal: { title: 'Something went wrong', ctaLabel: 'Close' }
 };

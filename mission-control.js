@@ -14,7 +14,7 @@
     typeLabels: { all: 'All', primary: 'Mystery Wheel', secondary: 'Mystery Slot', tertiary: 'Mystery Shuffle', promo: 'Promo' },
     ctaLabels: { enroll: 'Enroll', pause: 'Pause', resume: 'Resume', claim: 'Claim Reward', claimed: 'Claimed', expired: 'Expired', unavailable: 'Unavailable' },
     states: { loading: 'Loading missions…', error: 'Could not load missions.', empty: 'No missions match these filters.' },
-    countdown: { expiresIn: 'Expires in', expired: 'Expired' },
+    countdownLabel: 'Expires in',
     confirmModals: {
       enroll: { title: 'Are you sure you want to enroll in this mission?', body: '', confirmLabel: 'Enroll' },
       pause: { title: 'Are you sure you want to pause mission?', body: '', confirmLabel: 'Pause Mission' },
@@ -22,8 +22,8 @@
       claim: { title: 'Are you sure you want to claim your reward?', body: '', confirmLabel: 'Claim Reward' }
     },
     successModals: {
-      enroll: { title: "Congrats! You're enrolled to this mission", body: '', ctaLabel: 'Go to Active Missions', ctaAction: 'goToActive' },
-      claim: { title: 'Congrats! Reward claimed', body: '', ctaLabel: 'Close', ctaAction: 'close' }
+      enroll: { title: "Congrats! You're enrolled to this mission", body: '', ctaLabel: 'Go to Active Missions' },
+      claim: { title: 'Congrats! Reward claimed', body: '', ctaLabel: 'Close' }
     },
     errorModal: { title: 'Something went wrong', ctaLabel: 'Close' }
   };
@@ -335,6 +335,27 @@
         const res = await fetch(`${this.apiBase}/missions`);
         if (!res.ok) throw new Error(`Request failed (${res.status})`);
         const missions = (await res.json()) || [];
+        missions.push({
+        "id": "123",
+        "title": "800 Free Spins",
+        "status": "ready",
+        "claimedAt": null,
+        "expiresAt": "2026-07-16T08:21:00.039Z",
+        "tasks": [
+            {
+                "title": "Confirm your email address in Settings",
+                "completed": true
+            },
+            {
+                "title": "Activate 2 Factor Authentication",
+                "completed": false
+            },
+            {
+                "title": "Add one game to Favourite Games",
+                "completed": false
+            }
+        ]
+        })
         this._missions = missions.map((m) => ({ ...m, type: deriveType(m) }));
         this._render();
       } catch (err) {
@@ -485,7 +506,7 @@
         ctaLabel: copy.ctaLabel,
         action: action,
         onConfirm: () => {
-          if (copy.ctaAction === 'goToActive') this._selectStatusFilter('active');
+          if (action === 'enroll') this._selectStatusFilter('active');
           this._closeModal();
         }
       });
@@ -558,11 +579,11 @@
 
     _formatCountdown(expiresAt) {
       const diffMs = new Date(expiresAt).getTime() - Date.now();
-      if (diffMs <= 0) return this._i18n.countdown.expired;
-      const totalMinutes = Math.floor(diffMs / 60000);
+      if (diffMs <= 0) return '';
+      const totalMinutes = Math.ceil(diffMs / 60000);
       const hours = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
       const minutes = String(totalMinutes % 60).padStart(2, '0');
-      return `${this._i18n.countdown.expiresIn} <strong>${hours}h:${minutes}m</strong>`;
+      return `${this._i18n.countdownLabel} <strong>${hours}h:${minutes}m</strong>`;
     }
 
     _updateTimers() {
