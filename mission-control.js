@@ -103,11 +103,18 @@
       appearance: none; border: none; font: 700 16px var(--mc-font); padding: 13px 16px; width: 100%; cursor: pointer;
       border-radius: var(--mc-radius); transition: filter 0.2s ease; color: var(--mc-text); background: var(--mc-primary);
     }
-    .mc-cta:hover:not(:disabled) { filter: brightness(1.1); }
-    .mc-cta:disabled { cursor: not-allowed; box-shadow: inset 0 0 200px #00000060; }
+    .mc-cta:hover:not(:disabled)  { filter: brightness(1.1); }
+    .mc-cta:disabled              { cursor: not-allowed; box-shadow: inset 0 0 200px #00000060; }
     .mc-cta[data-action="resume"] { background: var(--mc-tertiary); box-shadow: inset 0 0 200px #00000040; }
     .mc-cta[data-action="claim"]  { background: var(--mc-secondary); }
     .mc-cta[data-action="done"]   { background: var(--mc-secondary); }
+    .mc-cta[data-action="error"]  { background: var(--mc-danger); }
+    .mc-cta[data-loading="true"] { position: relative; color: transparent; pointer-events: none; }
+    .mc-cta[data-loading="true"]::after {
+      content: ''; position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px;
+      border: 2px solid rgba(255, 255, 255, 0.35); border-top-color: #ffffff; border-radius: 50%;
+      animation: mc-spin 0.6s linear infinite;
+    }
     .mc-empty, .mc-error, .mc-loading {
       grid-column: 1 / -1; font-size: 16px; padding: 48px 12px;
       text-align: center; border-radius: var(--mc-radius); border: 1px solid #ffffff20;
@@ -127,6 +134,7 @@
       width: 24px; height: 24px; border-radius: 50%; font-size: 16px; line-height: 1; cursor: pointer; 
       border: none; color: #14161f; background: #ffffff;
     }
+    .mc-modal-close:disabled { cursor: not-allowed; opacity: 0.5; }
     .mc-modal-title { font-size: 26px; line-height: 1.2; font-weight: 700; margin: 4px 0 16px; padding-right: 24px; }
     .mc-modal-subtitle { font-size: 16px; font-weight: 300; opacity: 0.5; margin: 0 0 16px; }
     .mc-modal-body { font-size: 20px; font-weight: 300; margin-bottom: 16px; }
@@ -134,6 +142,7 @@
 
     @media (prefers-reduced-motion: reduce) {
       .mc-cta, .mc-modal-cta, .mc-filter-chevron { transition: none; }
+      .mc-cta[data-loading="true"]::after { animation: none; }
     }
     @media (min-width: 720px) {
       .mc-grid { grid-template-columns: repeat(2, 1fr); }
@@ -142,6 +151,7 @@
       .mc-modal-overlay { padding: 24px; }
       .mc-modal { border-radius: var(--mc-radius); height: auto; min-height: 300px; margin: 80px auto 0; }
     }
+    @keyframes mc-spin { to { transform: rotate(360deg); } }
   `;
 
   const ICON_CHEVRON = `<svg class="mc-filter-chevron" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -265,10 +275,12 @@
       this.shadowRoot.appendChild(TEMPLATE.content.cloneNode(true));
 
       this._missions = [];
+      this._pendingIds = new Set();
       this._filters = { status: 'ready', type: 'all' };
       this._i18n = deepMerge(DEFAULT_I18N, {});
       this._pendingContext = null;
       this._countdownTimerId = null;
+      this._loadScheduled = false;
 
       this._contentEl = this.shadowRoot.getElementById('mc-content');
       this._modalOverlayEl = this.shadowRoot.getElementById('mc-modal-overlay');
@@ -276,9 +288,10 @@
       this._modalSubtitleEl = this.shadowRoot.getElementById('mc-modal-subtitle');
       this._modalBodyEl = this.shadowRoot.getElementById('mc-modal-body');
       this._modalCtaEl = this.shadowRoot.getElementById('mc-modal-cta');
+      this._modalCloseEl = this.shadowRoot.getElementById('mc-modal-close');
 
       this._contentEl.addEventListener('click', (e) => this._onCardClick(e));
-      this.shadowRoot.getElementById('mc-modal-close').addEventListener('click', () => this._closeModal());
+      this._modalCloseEl.addEventListener('click', () => this._closeModal());
       this._modalOverlayEl.addEventListener('click', (e) => {
         if (e.target === this._modalOverlayEl) this._closeModal();
       });
@@ -297,7 +310,7 @@
       document.addEventListener('click', this._onDocumentClick);
       document.addEventListener('keydown', this._onKeydown);
       if (this.hasAttribute('translations')) this._setTranslationsFromAttribute(this.getAttribute('translations'));
-      if (!this._missions.length) this.load();
+      if (!this._missions.length) this._scheduleLoad();
       this._countdownTimerId = setInterval(() => this._updateTimers(), 60000);
     }
 
@@ -309,8 +322,17 @@
 
     attributeChangedCallback(name, oldVal, newVal) {
       if (oldVal === newVal || !this.isConnected) return;
-      if (name === 'api-base') this.load();
+      if (name === 'api-base') this._scheduleLoad();
       if (name === 'translations') this._setTranslationsFromAttribute(newVal);
+    }
+
+    _scheduleLoad() {
+      if (this._loadScheduled) return;
+      this._loadScheduled = true;
+      queueMicrotask(() => {
+        this._loadScheduled = false;
+        this.load();
+      });
     }
 
     get apiBase() {
@@ -355,7 +377,7 @@
 
     _applyTranslations(overrides) {
       this._i18n = deepMerge(DEFAULT_I18N, overrides);
-      this._initFilters();
+      this._paintFilterLabels();
       this._render();
     }
 
@@ -452,7 +474,11 @@
 
     async _performAction(action, mission) {
       const id = mission.id;
+      this._pendingIds.add(id);
       this._modalCtaEl.disabled = true;
+      this._modalCtaEl.dataset.loading = 'true';
+      this._modalCloseEl.disabled = true;
+      this._render();
 
       try {
         const res = await fetch(`${this.apiBase}/missions/${encodeURIComponent(id)}/${action}`, {
@@ -465,12 +491,15 @@
         }
         const { mission: updated } = await res.json();
         this._applyMissionUpdate(updated);
-        this._render();
         this.dispatchEvent(new CustomEvent('mission-action', { detail: { id, action, mission: updated }, bubbles: true, composed: true }));
         this._openResultModal(action, updated);
       } catch (err) {
         this.dispatchEvent(new CustomEvent('mission-error', { detail: { id, action, error: err }, bubbles: true, composed: true }));
         this._openErrorModal(err);
+      } finally {
+        this._pendingIds.delete(id);
+        this._modalCloseEl.disabled = false;
+        this._render();
       }
     }
 
@@ -498,7 +527,7 @@
         subtitle: '',
         body: err?.message || '',
         ctaLabel: copy.ctaLabel,
-        action: 'locked',
+        action: 'error',
         onConfirm: () => this._closeModal()
       });
     }
@@ -510,6 +539,7 @@
       this._modalBodyEl.innerHTML = renderRichText(body);
       this._modalCtaEl.textContent = ctaLabel;
       this._modalCtaEl.dataset.action = action;
+      this._modalCtaEl.dataset.loading = 'false';
       this._modalCtaEl.disabled = false;
       this._modalCtaEl.onclick = onConfirm;
       this._modalOverlayEl.hidden = false;
@@ -595,7 +625,7 @@
       const { id, title, type, expiresAt, tasks = [] } = mission;
       const status = effectiveStatus(mission);
       const cta = this._resolveCta(mission, status);
-
+      const isPending = this._pendingIds.has(id);
       const isLivePromo = type === 'promo' && status !== 'completed' && status !== 'expired';
       const headerRight = isLivePromo
         ? `<span class="mc-timer" part="mc-timer" data-end="${expiresAt}"><span class="mc-timer-text">${this._formatCountdown(expiresAt)}</span>${ICON_TIMER}</span>
@@ -610,7 +640,7 @@
           </div>
           ${renderTaskList(tasks)}
           <div class="mc-card-footer">
-            <button class="mc-cta" type="button" part="mc-cta" data-id="${escapeHtml(id)}" data-action="${cta.action}" ${cta.disabled ? 'disabled' : ''}>
+            <button class="mc-cta" type="button" part="mc-cta" data-id="${escapeHtml(id)}" data-action="${cta.action}" data-loading="${isPending}" ${cta.disabled || isPending ? 'disabled' : ''}>
               ${escapeHtml(cta.label)}
             </button>
           </div>
