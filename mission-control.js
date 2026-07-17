@@ -9,7 +9,7 @@
   const ACTIONS = ['enroll', 'pause', 'resume', 'claim'];
 
   const DEFAULT_I18N = {
-    filterLabels: { status: 'Statuss', type: 'Type' },
+    filterLabels: { status: 'Status', type: 'Type' },
     statusLabels: { all: 'All', ready: 'Available', active: 'Active', paused: 'Paused', completed: 'Completed', expired: 'Expired' },
     typeLabels: { all: 'All', primary: 'Mystery Wheel', secondary: 'Mystery Slot', tertiary: 'Mystery Shuffle', promo: 'Promo' },
     ctaLabels: { enroll: 'Enroll', pause: 'Pause', resume: 'Resume', claim: 'Claim Reward', claimed: 'Claimed', expired: 'Expired', unavailable: 'Unavailable' },
