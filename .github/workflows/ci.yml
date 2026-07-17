@@ -1,9 +1,6 @@
 name: CI
 
 on:
-  pull_request:
-  push:
-    branches: [main]
   workflow_dispatch:
     inputs:
       bump:
@@ -43,7 +40,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Bump version, commit, and tag
-        run: npm version "${{ github.event.inputs.bump || 'patch' }}" -m "chore(release): v%s [skip ci]"
+        run: |
+          npm version "${{ github.event.inputs.bump || 'patch' }}" -m "chore(release): v%s [skip ci]"
 
       - name: Push version bump and tag
         run: git push origin HEAD:main --follow-tags
