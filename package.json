@@ -1,12 +1,11 @@
 {
   "name": "@fgrasu/mission-control",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "A framework-free Web Component that renders a grid of mission cards from a REST API — with i18n support.",
   "main": "mission-control.js",
   "module": "mission-control.js",
   "unpkg": "mission-control.js",
   "type": "commonjs",
-  "sideEffects": true,
   "files": [
     "mission-control.js",
     "README.md"
