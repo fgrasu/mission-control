@@ -12,7 +12,7 @@ A framework-free Web Component that renders a grid of mission cards from a REST 
 ### Option 1 — Script tag via jsDelivr
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/fgrasu/mission-control@v1.0.0/mission-control.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/fgrasu/mission-control@vlatest/mission-control.js"></script>
 ```
 
 jsDelivr serves directly from GitHub — no npm publish needed.
@@ -146,6 +146,7 @@ mission-control::part(card) {
 | Name             | Type              | Description                                                      |
 |------------------|-------------------|------------------------------------------------------------------|
 | `api-base`       | attribute         | Base URL for all fetch/post calls.                               |
+| `server-time`    | attribute         | Server time.                                                     |
 | `translations`   | attribute / property | Copy overrides — JSON string as an attribute, or a plain object as a property. See [Translations](#translations). |
 | `.refresh()`     | method            | Re-fetches `GET {api-base}/missions`.                            |
 | `mission-action` | CustomEvent       | Fires after any successful enroll/pause/resume/claim.            |
