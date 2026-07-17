@@ -1,6 +1,8 @@
 (function () {
   'use strict';
 
+  if (typeof document === 'undefined' || typeof customElements === 'undefined') return;
+
   // ===========================================================================
   // CONSTANTS
   // ===========================================================================
@@ -109,7 +111,7 @@
     .mc-cta[data-action="claim"]  { background: var(--mc-secondary); }
     .mc-cta[data-action="done"]   { background: var(--mc-secondary); }
     .mc-cta[data-action="error"]  { background: var(--mc-danger); }
-    .mc-cta[data-loading="true"] { position: relative; color: transparent; pointer-events: none; }
+    .mc-cta[data-loading="true"]  { position: relative; color: transparent; pointer-events: none; }
     .mc-cta[data-loading="true"]::after {
       content: ''; position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px;
       border: 2px solid rgba(255, 255, 255, 0.35); border-top-color: #ffffff; border-radius: 50%;
@@ -141,7 +143,7 @@
     .mc-modal-body p { margin: 0 0 8px; }
 
     @media (prefers-reduced-motion: reduce) {
-      .mc-cta, .mc-modal-cta, .mc-filter-chevron { transition: none; }
+      .mc-cta, .mc-filter-chevron { transition: none; }
       .mc-cta[data-loading="true"]::after { animation: none; }
     }
     @media (min-width: 720px) {
@@ -226,15 +228,15 @@
     return 'tertiary';
   }
 
-  function effectiveStatus(mission) {
-    if (mission.status !== 'completed' && mission.expiresAt && new Date(mission.expiresAt).getTime() <= Date.now()) return 'expired';
+  function effectiveStatus(mission, now) {
+    if (mission.status !== 'completed' && mission.expiresAt && new Date(mission.expiresAt).getTime() <= now) return 'expired';
     return mission.status;
   }
 
-  function matchesFilters(mission, filters) {
+  function matchesFilters(mission, filters, now) {
     if (filters.type !== 'all' && mission.type !== filters.type) return false;
     if (filters.status === 'all') return true;
-    const status = effectiveStatus(mission);
+    const status = effectiveStatus(mission, now);
     if (filters.status === 'active') return status === 'active' || status === 'paused';
     return status === filters.status;
   }
@@ -266,7 +268,7 @@
 
   class MissionControl extends HTMLElement {
     static get observedAttributes() {
-      return ['api-base', 'translations'];
+      return ['api-base', 'translations', 'server-time'];
     }
 
     constructor() {
@@ -281,6 +283,8 @@
       this._pendingContext = null;
       this._countdownTimerId = null;
       this._loadScheduled = false;
+      this._serverTimeAtSync = null;
+      this._perfAtSync = null;
 
       this._contentEl = this.shadowRoot.getElementById('mc-content');
       this._modalOverlayEl = this.shadowRoot.getElementById('mc-modal-overlay');
@@ -310,6 +314,7 @@
       document.addEventListener('click', this._onDocumentClick);
       document.addEventListener('keydown', this._onKeydown);
       if (this.hasAttribute('translations')) this._setTranslationsFromAttribute(this.getAttribute('translations'));
+      if (this.hasAttribute('server-time')) this._setServerTimeFromAttribute(this.getAttribute('server-time'));
       if (!this._missions.length) this._scheduleLoad();
       this._countdownTimerId = setInterval(() => this._updateTimers(), 60000);
     }
@@ -324,6 +329,7 @@
       if (oldVal === newVal || !this.isConnected) return;
       if (name === 'api-base') this._scheduleLoad();
       if (name === 'translations') this._setTranslationsFromAttribute(newVal);
+      if (name === 'server-time') this._setServerTimeFromAttribute(newVal);
     }
 
     _scheduleLoad() {
@@ -345,6 +351,26 @@
 
     set translations(value) {
       this._applyTranslations(value || {});
+    }
+
+    get serverTime() {
+      return this._serverTimeAtSync == null ? null : new Date(this._now()).toISOString();
+    }
+
+    set serverTime(value) {
+      if (value == null) {
+        this._serverTimeAtSync = null;
+        this._perfAtSync = null;
+        return;
+      }
+      const ts = value instanceof Date ? value.getTime() : typeof value === 'number' ? value : new Date(value).getTime();
+      if (Number.isNaN(ts)) {
+        console.warn(`[${TAG_NAME}] Ignoring invalid serverTime value:`, value);
+        return;
+      }
+      this._serverTimeAtSync = ts;
+      this._perfAtSync = performance.now();
+      if (this._missions.length) this._render();
     }
 
     refresh() {
@@ -381,14 +407,16 @@
       this._render();
     }
 
-    // "Paused" isn't its own filter tab — a paused mission still shows up under "Active".
-    _statusFilterOptions() {
-      const { paused, ...rest } = this._i18n.statusLabels;
-      return rest;
+    // ---- Time ----
+
+    _setServerTimeFromAttribute(raw) {
+      if (!raw) return;
+      const num = Number(raw);
+      this.serverTime = Number.isNaN(num) ? raw : num;
     }
 
-    _typeFilterOptions() {
-      return this._i18n.typeLabels;
+    _now() {
+      return this._serverTimeAtSync == null ? Date.now() : this._serverTimeAtSync + (performance.now() - this._perfAtSync);
     }
 
     // ---- Filters ----
@@ -418,6 +446,15 @@
           this._render();
         });
       });
+    }
+
+    _statusFilterOptions() {
+      const { paused, ...rest } = this._i18n.statusLabels;
+      return rest;
+    }
+
+    _typeFilterOptions() {
+      return this._i18n.typeLabels;
     }
 
     _paintFilterLabels() {
@@ -505,7 +542,7 @@
 
     _openResultModal(action, mission) {
       const copy = this._i18n.successModals[action];
-      if (!copy) return this._closeModal();
+      if (!copy || !mission) return this._closeModal();
 
       this._renderModal({
         title: copy.title,
@@ -587,19 +624,19 @@
     }
 
     _formatCountdown(expiresAt) {
-      const diffMs = new Date(expiresAt).getTime() - Date.now();
+      const diffMs = new Date(expiresAt).getTime() - this._now();
       if (diffMs <= 0) return '';
       const totalMinutes = Math.ceil(diffMs / 60000);
       const hours = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
       const minutes = String(totalMinutes % 60).padStart(2, '0');
-      return `${this._i18n.countdownLabel} <strong>${hours}h:${minutes}m</strong>`;
+      return `${escapeHtml(this._i18n.countdownLabel)} <strong>${hours}h:${minutes}m</strong>`;
     }
 
     _updateTimers() {
       this.shadowRoot.querySelectorAll('.mc-timer[data-end]').forEach((el) => {
         el.querySelector('.mc-timer-text').innerHTML = this._formatCountdown(el.dataset.end);
       });
-      if (this._missions.some((m) => effectiveStatus(m) === 'expired' && m.status !== 'expired' && m.status !== 'completed')) {
+      if (this._missions.some((m) => effectiveStatus(m, this._now()) === 'expired' && m.status !== 'expired' && m.status !== 'completed')) {
         this._render();
       }
     }
@@ -614,7 +651,7 @@
     }
 
     _render() {
-      const filtered = this._missions.filter((m) => matchesFilters(m, this._filters));
+      const filtered = this._missions.filter((m) => matchesFilters(m, this._filters, this._now()));
       if (!filtered.length) return this._renderState('empty');
 
       const cards = filtered.map((m) => this._renderCard(m)).join('');
@@ -623,7 +660,7 @@
 
     _renderCard(mission) {
       const { id, title, type, expiresAt, tasks = [] } = mission;
-      const status = effectiveStatus(mission);
+      const status = effectiveStatus(mission, this._now());
       const cta = this._resolveCta(mission, status);
       const isPending = this._pendingIds.has(id);
       const isLivePromo = type === 'promo' && status !== 'completed' && status !== 'expired';
